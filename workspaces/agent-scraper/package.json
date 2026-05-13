@@ -1,5 +1,5 @@
 {
-  "name": "agent-b",
+  "name": "agent-orchestrator",
   "version": "1.0.0",
   "description": "Dependencies installed: - playwright - puppeteer   - dotenv",
   "main": "index.js",

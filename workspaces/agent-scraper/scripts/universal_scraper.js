@@ -1018,7 +1018,7 @@ async function universalScrape(url, limit = 20, requireLogin = false) {
   const hasSession = fs.existsSync(sessionPath);
 
   // LOGIC ĐÓNG MỞ GIAO DIỆN:
-  // Nếu chưa có file session HOẶC Agent-A ép buộc requireLogin -> Bật giao diện (false) để tương tác
+  // Nếu chưa có file session HOẶC Agent-Orchestrator ép buộc requireLogin -> Bật giao diện (false) để tương tác
   const needManualLogin = requireLogin || !hasSession;
   const isHeadless = !needManualLogin;
 
@@ -1054,7 +1054,7 @@ async function universalScrape(url, limit = 20, requireLogin = false) {
     // Truyền biến needManualLogin xuống để kích hoạt luồng handleLogin
     const result = await scraper.scrape(url, limit, needManualLogin);
     
-    // In ra kết quả JSON cuối cùng để Agent-A hứng lấy
+    // In ra kết quả JSON cuối cùng để Agent-Orchestrator hứng lấy
     console.log(JSON.stringify(result));
 
   } catch (err) {
@@ -1067,7 +1067,7 @@ async function universalScrape(url, limit = 20, requireLogin = false) {
 
 const targetUrl = process.argv[2];
 const targetLimit = parseInt(process.argv[3]) || 20;
-// Tham số thứ 4 từ agent-b truyền vào (nếu có)
+// Tham số thứ 4 từ agent-orchestrator truyền vào (nếu có)
 const requireLogin = process.argv[4] === 'require_login'; 
 
 if (!targetUrl) {

@@ -1,15 +1,13 @@
-# Nội dung file agents/agent-a.yaml
+# Nội dung file agents/agent-orchestrator.yaml
 tools:
   allow:
     - read
     - sessions_spawn:
         agents:
-          - agent-b
-          - agent-c
+          - agent-scraper
     - sessions_send:
         agents:
-          - agent-b
-          - agent-c
+          - agent-scraper
     - session_status
     - sessions_history
   deny:

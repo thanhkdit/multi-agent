@@ -1,0 +1,70 @@
+{
+  "competitor_analysis": {
+    "competitor_name": "Competitor X",
+    "collection_date": "2026-05-04T14:29:40.882886",
+    "facebook_page": {
+      "page_name": "Competitor X Facebook Page",
+      "page_url": "https://facebook.com/competitorx",
+      "likes": 50000,
+      "followers": 55000,
+      "category": "Technology",
+      "description": "Official Facebook page of Competitor X",
+      "website": "https://competitorx.com",
+      "contact_info": {
+        "email": "info@competitorx.com",
+        "phone": "+1-234-567-8900"
+      }
+    },
+    "metrics": {
+      "posting_frequency": 1.2,
+      "average_engagement_rate": 976.6666666666666,
+      "top_content_types": [
+        "video",
+        "photo",
+        "link"
+      ],
+      "peak_posting_times": [
+        "10:00-12:00",
+        "14:00-16:00"
+      ]
+    },
+    "recent_posts": [
+      {
+        "post_id": "123456789",
+        "post_url": "https://facebook.com/competitorx/posts/123456789",
+        "post_type": "video",
+        "content": "New product launch announcement! Check out our latest innovation.",
+        "timestamp": "2026-05-03T10:30:00Z",
+        "likes": 1200,
+        "comments": 85,
+        "shares": 45,
+        "views": 15000,
+        "engagement_rate": 8.9
+      },
+      {
+        "post_id": "123456788",
+        "post_url": "https://facebook.com/competitorx/posts/123456788",
+        "post_type": "photo",
+        "content": "Behind the scenes at our headquarters #TeamWork",
+        "timestamp": "2026-05-02T14:15:00Z",
+        "likes": 850,
+        "comments": 32,
+        "shares": 18,
+        "views": null,
+        "engagement_rate": 5.2
+      },
+      {
+        "post_id": "123456787",
+        "post_url": "https://facebook.com/competitorx/posts/123456787",
+        "post_type": "link",
+        "content": "Check out our latest blog post about industry trends",
+        "timestamp": "2026-05-01T09:45:00Z",
+        "likes": 650,
+        "comments": 28,
+        "shares": 22,
+        "views": null,
+        "engagement_rate": 4.5
+      }
+    ]
+  }
+}

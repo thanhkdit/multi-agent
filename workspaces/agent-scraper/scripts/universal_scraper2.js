@@ -205,7 +205,7 @@ class FacebookScraper {
         console.log(`[Vision AI] Đang chụp ảnh bài ${i + 1}...`);
         const imgBuffer = await article.screenshot({ type: 'jpeg', quality: 85 });
         
-        // [CẬP NHẬT]: Lưu file ảnh vào workspace/agent-b/images
+        // [CẬP NHẬT]: Lưu file ảnh vào workspace/agent-orchestrator/images
         const imgFilename = `post_${i + 1}_${Date.now()}.jpg`;
         const imgPath = path.join(CONFIG.IMAGES_DIR, imgFilename);
         fs.writeFileSync(imgPath, imgBuffer);

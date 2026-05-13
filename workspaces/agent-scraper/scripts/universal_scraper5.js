@@ -467,7 +467,7 @@ async function universalScrape(url, limit = 20, requireLogin = false) {
 
 const targetUrl = process.argv[2];
 const targetLimit = parseInt(process.argv[3]) || 20;
-// Tham số thứ 4 từ agent-b truyền vào (nếu có)
+// Tham số thứ 4 từ agent-orchestrator truyền vào (nếu có)
 const requireLogin = process.argv[4] === 'require_login'; 
 
 if (!targetUrl) {

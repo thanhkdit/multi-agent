@@ -11,7 +11,7 @@ async def main():
         
     target_url = sys.argv[1]
     
-    # Định tuyến file đầu ra chuẩn về workspace của agent-b
+    # Định tuyến file đầu ra chuẩn về workspace của agent-orchestrator
     workspace_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     output_file = os.path.join(workspace_dir, "crawler_result.json")
 

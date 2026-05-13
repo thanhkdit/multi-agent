@@ -4,7 +4,7 @@
   "properties": {
     "route_to": {
       "type": "string",
-      "enum": ["agent-b", "agent-c", "unknown"]
+      "enum": ["agent-orchestrator", "agent-c", "unknown"]
     },
     "task_type": {
       "type": "string",
