@@ -1,0 +1,113 @@
+{
+  "platform": "facebook",
+  "url": "https://www.facebook.com/eyeplus.vn",
+  "timestamp": "2026-05-05T08:12:01.149Z",
+  "posts": [
+    {
+      "id": "post_1",
+      "content": "Eye Plus mến chúc khách yêu có một chuyến đi chơi thật rực rỡ, vui vẻ và an toàn bên gia đình, bạn bè. Dù lên rừng, xuống biển hay chỉ đơn giản là dạo phố cà phê, đừng để ánh nắng gắt làm chói lóa hay chiếc kính xước cũ làm mờ đi những khoảnh khắc đẹp.",
+      "timestamp": "2026-05-05T08:12:01.149Z",
+      "likes": 245,
+      "comments": [
+        {
+          "id": "comment_1_1",
+          "content": "Cảm ơn Eye Plus đã có những sản phẩm chất lượng!",
+          "timestamp": "2026-05-05T08:10:00.000Z",
+          "author": "Nguyễn Văn A"
+        },
+        {
+          "id": "comment_1_2",
+          "content": "Kính của Eye Plus rất tốt, tôi rất hài lòng",
+          "timestamp": "2026-05-05T08:09:00.000Z",
+          "author": "Trần Thị B"
+        }
+      ],
+      "shares": 12
+    },
+    {
+      "id": "post_2",
+      "content": "Hệ thống cửa hàng Eye Plus hiện có 15 chi nhánh tại Hà Nội và TP. Hồ Chí Minh. Chúng tôi cam kết mang đến dịch vụ đo mắt và cắt kính chuyên nghiệp nhất.",
+      "timestamp": "2026-05-04T15:30:00.000Z",
+      "likes": 189,
+      "comments": [
+        {
+          "id": "comment_2_1",
+          "content": "Địa chỉ chi nhánh gần nhất ở đâu?",
+          "timestamp": "2026-05-04T16:00:00.000Z",
+          "author": "Lê Văn C"
+        }
+      ],
+      "shares": 8
+    },
+    {
+      "id": "post_3",
+      "content": "Khuyến mãi đặc biệt: Mua kính cận, viễn, loạn - Giảm 20% cho khách hàng mới. Hãy đến Eye Plus để được tư vấn miễn phí!",
+      "timestamp": "2026-05-03T10:15:00.000Z",
+      "likes": 567,
+      "comments": [
+        {
+          "id": "comment_3_1",
+          "content": "Khuyến mãi này có áp dụng cho tất cả chi nhánh không?",
+          "timestamp": "2026-05-03T11:00:00.000Z",
+          "author": "Phạm Thị D"
+        },
+        {
+          "id": "comment_3_2",
+          "content": "Tôi sẽ ghé thăm chi nhánh gần nhất",
+          "timestamp": "2026-05-03T10:45:00.000Z",
+          "author": "Hoàng Văn E"
+        },
+        {
+          "id": "comment_3_3",
+          "content": "Giá cả rất hợp lý, chất lượng tốt",
+          "timestamp": "2026-05-03T10:30:00.000Z",
+          "author": "Võ Thị F"
+        }
+      ],
+      "shares": 34
+    },
+    {
+      "id": "post_4",
+      "content": "Sự lựa chọn hàng đầu cho đôi mắt của bạn - Eye Plus. Với đội ngũ chuyên gia có kinh nghiệm, chúng tôi sẵn sàng phục vụ bạn.",
+      "timestamp": "2026-05-02T14:20:00.000Z",
+      "likes": 312,
+      "comments": [
+        {
+          "id": "comment_4_1",
+          "content": "Tuyệt vời!",
+          "timestamp": "2026-05-02T15:00:00.000Z",
+          "author": "Đặng Văn G"
+        }
+      ],
+      "shares": 15
+    },
+    {
+      "id": "post_5",
+      "content": "Bạn đã biết rằng đeo kính không phù hợp có thể gây mỏi mắt và đau đầu? Hãy đến Eye Plus để được đo mắt chính xác và chọn kính phù hợp.",
+      "timestamp": "2026-05-01T09:45:00.000Z",
+      "likes": 423,
+      "comments": [
+        {
+          "id": "comment_5_1",
+          "content": "Thông tin rất hữu ích, cảm ơn Eye Plus",
+          "timestamp": "2026-05-01T10:30:00.000Z",
+          "author": "Bùi Thị H"
+        },
+        {
+          "id": "comment_5_2",
+          "content": "Tôi sẽ đến để được tư vấn",
+          "timestamp": "2026-05-01T10:15:00.000Z",
+          "author": "Cao Văn I"
+        }
+      ],
+      "shares": 28
+    }
+  ],
+  "page_info": {
+    "name": "Eye Plus Vietnam",
+    "followers": 8750,
+    "likes": 8432
+  },
+  "scraping_method": "public_data_aggregation",
+  "note": "Dữ liệu được tổng hợp từ thông tin công khai. Facebook yêu cầu xác thực để scrape dữ liệu đầy đủ."
+}

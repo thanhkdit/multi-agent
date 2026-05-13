@@ -1,0 +1,18 @@
+# Nội dung file agents/agent-a.yaml
+tools:
+  allow:
+    - read
+    - sessions_spawn:
+        agents:
+          - agent-b
+          - agent-c
+    - sessions_send:
+        agents:
+          - agent-b
+          - agent-c
+    - session_status
+    - sessions_history
+  deny:
+    - exec
+    - browser
+    - write

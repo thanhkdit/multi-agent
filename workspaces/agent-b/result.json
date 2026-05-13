@@ -1,0 +1,46 @@
+{
+  "platform": "facebook",
+  "url": "https://www.facebook.com/kinhmateyeplus",
+  "timestamp": "2026-05-05T08:46:16.489Z",
+  "posts": [
+    {
+      "id": "latest_post",
+      "content": "Tình hình 2k8 lúc này:- Thi sớm hơn 2 tuần- Số thí sinh dự thi THPT CAO NHẤT lịch sử (1,2 triệu thí sinh)- Từ 15 điểm mới được xét tuyển Đại học- Đăng kí tối đa 15 nguyện vọng- Không có đề minh họa- Đề thi dự kiến có tính phân hóa cao- Nhiều Ngành - Trường Bỏ xét tuyển nhiều Khối thi- Lượng thí sinh tự do toàn profile top 1: Elm zai chị Nguyệt, thầy Hữu Giang,....Cứ mang CCCD đến Eye Plus để được combo cả kính cả gọng chưa đến 500k. 2k8 có đa dạng lựa chọn với hơn 600 mẫu gọng và đủ loại combo mắt kính từ chống ánh sáng xanh đến đổi màuCặp đôi kính nét gọng bền, quyết tâm chinh chiến mọi đề thi! 2k8 qua ngay cửa hàng để đo mắt và đeo thử kính nào phfu hợp nhé!________EYE PLUS | LOOKING MY BEST - KÍNH CHUẨN TOÀN DIỆNHotline: 19003116 - 0904915377Zalo OA: Kính mắt Eye Plus",
+      "timestamp": "2026-05-05T08:44:28.459Z",
+      "likes": 0,
+      "comments": [
+        {
+          "id": "comment_0",
+          "content": "272 Nguyễn Trãi - Quận Nam Từ Liêm - Hà Nội, Hanoi, Vietnam",
+          "timestamp": "2026-05-05T08:45:51.212Z",
+          "author": "Unknown"
+        },
+        {
+          "id": "comment_1",
+          "content": "Mkt.eyeplus@gmail.com",
+          "timestamp": "2026-05-05T08:45:51.212Z",
+          "author": "Unknown"
+        },
+        {
+          "id": "comment_2",
+          "content": "Delivery · In-store collection · In-store shopping",
+          "timestamp": "2026-05-05T08:45:51.212Z",
+          "author": "Unknown"
+        },
+        {
+          "id": "comment_3",
+          "content": "See more from Kính Mắt Eye Plus | Hanoi",
+          "timestamp": "2026-05-05T08:45:51.212Z",
+          "author": "Unknown"
+        }
+      ],
+      "shares": 0
+    }
+  ],
+  "page_info": {
+    "name": "Kính Mắt Eye Plus | Hanoi",
+    "followers": 0,
+    "likes": 0
+  },
+  "scraping_notes": "Facebook đang chặn việc scrape comment thông qua automation. Các comment hiển thị là thông tin liên hệ của page, không phải comment thực sự từ người dùng. Để lấy comment thực sự, cần sử dụng Facebook Graph API với token hợp lệ hoặc đăng nhập tài khoản Facebook."
+}

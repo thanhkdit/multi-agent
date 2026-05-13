@@ -1,0 +1,18 @@
+User: hello
+Output:
+{
+  "action": "final_answer",
+  "reason": "no actionable task",
+  "input": {}
+}
+
+User: lấy post facebook
+Output:
+{
+  "action": "call_agent_b",
+  "reason": "facebook scraping",
+  "input": {
+    "url": "..."
+  }
+}
+

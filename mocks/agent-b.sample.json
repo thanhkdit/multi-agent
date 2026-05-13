@@ -1,0 +1,27 @@
+{
+  "source": "agent-b-social",
+  "target": "competitor_facebook_page",
+  "date": "2026-04-28",
+  "posts": [
+    {
+      "post_id": "fb_001",
+      "published_at": "2026-04-28T08:30:00+07:00",
+      "text": "Ra mắt tính năng mới cho khách hàng doanh nghiệp.",
+      "metrics": {
+        "likes": 120,
+        "comments": 34,
+        "shares": 9
+      },
+      "top_comments": [
+        {
+          "author": "user_01",
+          "text": "Tính năng này có hỗ trợ API không?"
+        },
+        {
+          "author": "user_02",
+          "text": "Giá triển khai thế nào?"
+        }
+      ]
+    }
+  ]
+}
