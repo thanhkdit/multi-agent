@@ -1,2 +1,7 @@
 # Dependencies
 node_modules/
+browser-data/
+*.session
+cookies.json
+.env
+.zip
