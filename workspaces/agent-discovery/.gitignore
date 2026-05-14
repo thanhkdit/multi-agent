@@ -1,0 +1,4 @@
+node_modules/
+.openclaw/
+browser-data/
+.env

@@ -1,9 +1,0 @@
-id: agent-orchestrator
-name: social-scraper
-description: scrape social data
-
-model:
-  provider: openrouter
-  name: openai/gpt-4o-mini
-
-workspace: workspaces/agent-orchestrator

@@ -1,23 +1,61 @@
-# TOOL USAGE COMMAND
-Để lấy dữ liệu, bạn BẮT BUỘC gọi lệnh terminal sau:
+# TOOL EXECUTION
 
-`node ~/openclaw-multi-agent/workspace/agent-orchestrator/scripts/universal_scraper.js "<URL_đối_thủ>" "<Limit>" "<crawl_focus_optional>" "<require_login_optional>"`
+Để scrape Facebook:
 
-# THAM SỐ
-- Tham số 1: URL đối tượng cần crawl
-- Tham số 2: Limit số bài
-- Tham số 3: crawl_focus, nếu có
-- Tham số 4: require_login, nếu có
+`node ~/openclaw-multi-agent/workspaces/agent-b/scripts/universal_scraper.js "<URL>" "<LIMIT>" "<CRAWL_FOCUS>" "<require_login_optional>"`
 
-# VÍ DỤ
-Ví dụ Agent-Orchestrator truyền task:
-`https://facebook.com/abc | 15 | marketing_analysis | require_login`
+---
 
-Bạn phải gọi:
-`node ~/openclaw-multi-agent/workspace/agent-orchestrator/scripts/universal_scraper.js "https://facebook.com/abc" "15" "marketing_analysis" "require_login"`
+# PARAMETERS
 
-Nếu không có yêu cầu login:
-`node ~/openclaw-multi-agent/workspace/agent-orchestrator/scripts/universal_scraper.js "https://facebook.com/abc" "15" "marketing_analysis"`
+1. URL
+- Facebook page/profile URL
 
-Nếu không có mode:
-`node ~/openclaw-multi-agent/workspace/agent-orchestrator/scripts/universal_scraper.js "https://facebook.com/abc" "15"`
+2. LIMIT
+- số lượng posts
+
+3. CRAWL_FOCUS
+- latest_posts
+- engagement_scan
+- content_only
+- media_posts
+- full_posts
+- page_info
+
+4. require_login
+- optional
+
+---
+
+# EXAMPLES
+
+## Example 1
+
+Input task:
+
+`https://facebook.com/cocacola | 10 | engagement_scan`
+
+Execute:
+
+`node ~/openclaw-multi-agent/workspaces/agent-b/scripts/universal_scraper.js "https://facebook.com/cocacola" "10" "engagement_scan"`
+
+---
+
+## Example 2
+
+Input task:
+
+`https://facebook.com/nike | 15 | full_posts | require_login`
+
+Execute:
+
+`node ~/openclaw-multi-agent/workspaces/agent-b/scripts/universal_scraper.js "https://facebook.com/nike" "15" "full_posts" "require_login"`
+
+---
+
+# HARD CONSTRAINTS
+
+- chỉ execute Facebook scraping
+- không execute external URLs
+- không modify output JSON
+- không add explanation

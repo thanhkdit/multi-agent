@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+images/
+.openclaw/
 
 # Environment variables
 .env
