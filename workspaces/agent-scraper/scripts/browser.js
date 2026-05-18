@@ -7,7 +7,7 @@ async function createBrowser() {
   const context = await chromium.launchPersistentContext(
     USER_DATA_DIR,
     {
-      headless: true,
+      headless: false,
 
       viewport: {
         width: 1440,

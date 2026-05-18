@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 images/
+debug/
+screenshots/
+/browser-data/
 .openclaw/
 
 # Environment variables

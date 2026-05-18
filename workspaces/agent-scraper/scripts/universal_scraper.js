@@ -486,7 +486,9 @@ class FacebookScraper {
   {
     "is_post": true,
     "author": "",
+    "time": "",
     "content": "",
+    "image_description": "",
     "likes": 0,
     "comments": 0,
     "shares": 0,
@@ -494,8 +496,12 @@ class FacebookScraper {
   }
 
   QUAN TRỌNG:
+  - time: thời gian đăng bài (ví dụ: "2 giờ trước", "Hôm qua lúc 10:00", "Ngày 1 tháng 5")
+  - content: toàn bộ nội dung chữ của bài post
+  - image_description: nếu bài có chứa hình ảnh, hãy mô tả chi tiết hình ảnh đó bằng văn bản. Nếu không có ảnh thì để rỗng "".
+  - likes, comments, shares: lấy số lượng chính xác, chuyển các chữ K, M, Tr thành số (VD: 1.2K -> 1200). Nếu không thấy thì để 0.
   - chỉ lấy nội dung post chính
-  - bỏ qua comment
+  - bỏ qua comment của người khác
   - bỏ qua suggested content
   - bỏ qua ads
   - confidence từ 0-100
@@ -571,7 +577,7 @@ class FacebookScraper {
     await sleep(1500); 
   }
 
-  async scrollFeed(page, limit = 20) {
+  async scrollFeed(page, limit = 5) {
     console.log(`[DOM] Đang cuộn trang từ từ để tải ${limit} bài viết...`);
     // Tăng số lần cuộn để bù lại bước nhảy ngắn hơn
     const scrolls = Math.max(10, limit); 
@@ -585,25 +591,56 @@ class FacebookScraper {
   }
 
   async extractPageInfo(page) {
+    console.log('[VISION] Đang chụp ảnh phần đầu trang để phân tích thông tin page...');
+    const vision = new VisionHelper();
+    
+    await page.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'}));
+    await page.waitForTimeout(1500);
+    
+    const screenshotPath = path.join(CONFIG.IMAGE_DIR, `page_info_${Date.now()}.jpg`);
+    await page.screenshot({ path: screenshotPath });
+    const imageBuffer = fs.readFileSync(screenshotPath);
+    
+    const prompt = `Bạn đang nhìn thấy ảnh chụp phần đầu của một trang (page) hoặc tài khoản Facebook.
+Hãy phân tích ảnh và lấy ra các thông tin sau:
+- Tên page (name)
+- Số lượng người theo dõi (followers)
+- Lượt thích page (likes)
+- Mô tả page (description)
+
+Trả về JSON với format chính xác:
+{
+  "name": "",
+  "followers": "",
+  "likes": "",
+  "description": ""
+}
+Chỉ trả về JSON, không kèm giải thích.`;
+
+    const aiData = await vision.analyzeImage(imageBuffer, prompt, true);
+    console.log('[VISION PAGE INFO]', JSON.stringify(aiData, null, 2));
+    
+    if (aiData && aiData.name) {
+      return aiData;
+    }
+
+    // Fallback
     return await page.evaluate(() => {
       const result = {
         name: '',
-        followers: 0
+        followers: 0,
+        likes: 0,
+        description: ''
       };
 
       const h1 = document.querySelector('h1');
-
       if (h1) {
         result.name = h1.innerText.trim();
       }
 
       const bodyText = document.body.innerText;
-
-      const followerRegex =
-        /([\d,.]+)\s*(?:K|M|N|Tr)?\s*(?:followers|người theo dõi)/i;
-
+      const followerRegex = /([\\d,.]+)\\s*(?:K|M|N|Tr)?\\s*(?:followers|người theo dõi)/i;
       const match = bodyText.match(followerRegex);
-
       if (match) {
         result.followers = match[1];
       }
@@ -612,7 +649,7 @@ class FacebookScraper {
     });
   }
 
-  async extractPosts(page, limit = 20) {
+  async extractPosts(page, limit = 5) {
     console.log(
       `[DOM] Bắt đầu bóc tách tuần tự ${limit} bài viết...`
     );
@@ -873,6 +910,8 @@ class FacebookScraper {
         // =====================================================
 
         let contentText = '';
+        let imageDescription = '';
+        let time = '';
         let likes = 0;
         let comments = 0;
         let shares = 0;
@@ -886,15 +925,12 @@ class FacebookScraper {
         if (aiData && aiData.is_post) {
 
           contentText = aiData.content || '';
-
+          imageDescription = aiData.image_description || '';
+          time = aiData.time || '';
           likes = aiData.likes || 0;
-
           comments = aiData.comments || 0;
-
           shares = aiData.shares || 0;
-
           author = aiData.author || '';
-
           confidence = aiData.confidence || 0;
         }
 
@@ -914,7 +950,9 @@ class FacebookScraper {
             post_url: postUrl,
             timestamp: '',
             author: '',
+            time: '',
             content_text: '',
+            image_description: '',
             metrics: {
               likes: 0,
               comments: 0,
@@ -938,7 +976,9 @@ class FacebookScraper {
           post_url: postUrl,
           timestamp: '',
           author,
+          time,
           content_text: contentText,
+          image_description: imageDescription,
           metrics: {
             likes,
             comments,
@@ -968,7 +1008,7 @@ class FacebookScraper {
     return posts;
   }
 
-  async scrape(url, limit = 20, needManualLogin = false) {
+  async scrape(url, limit = 5, needManualLogin = false) {
     const page = await this.context.newPage();
 
     try {
@@ -1011,15 +1051,15 @@ class FacebookScraper {
   }
 }
 
-async function universalScrape(url, limit = 20, requireLogin = false) {
+async function universalScrape(url, limit = 5) {
   const platform = detectPlatform(url);
   const sessionPath = path.join(CONFIG.SESSION_DIR, 'fb_session.json');
   
   const hasSession = fs.existsSync(sessionPath);
 
   // LOGIC ĐÓNG MỞ GIAO DIỆN:
-  // Nếu chưa có file session HOẶC Agent-Orchestrator ép buộc requireLogin -> Bật giao diện (false) để tương tác
-  const needManualLogin = requireLogin || !hasSession;
+  // Nếu chưa có file session -> Bật giao diện (false) để tương tác
+  const needManualLogin = !hasSession;
   const isHeadless = !needManualLogin;
 
   const browser = await chromium.launch({
@@ -1066,13 +1106,11 @@ async function universalScrape(url, limit = 20, requireLogin = false) {
 }
 
 const targetUrl = process.argv[2];
-const targetLimit = parseInt(process.argv[3]) || 20;
-// Tham số thứ 4 từ agent-orchestrator truyền vào (nếu có)
-const requireLogin = process.argv[4] === 'require_login'; 
+const targetLimit = parseInt(process.argv[3]) || 10;
 
 if (!targetUrl) {
   console.log(JSON.stringify({ status: 'error', error: 'Missing URL' }));
   process.exit(1);
 }
 
-universalScrape(targetUrl, targetLimit, requireLogin);
+universalScrape(targetUrl, targetLimit);
