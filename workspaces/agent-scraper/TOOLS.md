@@ -17,6 +17,7 @@ Sử dụng khi Orchestrator yêu cầu chạy `facebook_discovery.js`.
 Sử dụng khi Orchestrator yêu cầu chạy `universal_scraper.js`.
 **Cú pháp:**
 `node ~/openclaw-multi-agent/workspaces/agent-scraper/scripts/universal_scraper.js "<url_page>" "<limit>"`
+*(Lưu ý: tham số `<limit>` có thể là một số nguyên như "10" hoặc chuỗi định dạng ngày "YYYY-MM-DD")*
 
 ---
 

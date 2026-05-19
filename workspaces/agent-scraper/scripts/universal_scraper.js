@@ -24,6 +24,26 @@ function safeFileName(name) {
     .slice(0, 80);
 }
 
+function cleanupImages() {
+  const dirs = [
+    path.join(__dirname, '../debug'),
+    path.join(__dirname, '../images'),
+    path.join(__dirname, '../screenshots')
+  ];
+  for (const dir of dirs) {
+    if (fs.existsSync(dir)) {
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        if (file.match(/\\.(jpg|jpeg|png)$/i)) {
+          try {
+            fs.unlinkSync(path.join(dir, file));
+          } catch(e) {}
+        }
+      }
+    }
+  }
+}
+
 function logError(message) {
   const timestamp = new Date().toISOString();
   fs.appendFileSync(CONFIG.ERROR_LOG, `[${timestamp}] ${message}\n`);
@@ -478,6 +498,7 @@ class FacebookScraper {
     // AI ANALYZE
     // =====================================================
 
+    const today = new Date().toISOString().split('T')[0];
     const prompt = `
   Bạn đang nhìn thấy screenshot của 1 Facebook post.
 
@@ -496,7 +517,7 @@ class FacebookScraper {
   }
 
   QUAN TRỌNG:
-  - time: thời gian đăng bài (ví dụ: "2 giờ trước", "Hôm qua lúc 10:00", "Ngày 1 tháng 5")
+  - time: TRẢ VỀ CHÍNH XÁC NGÀY ĐĂNG BÀI theo định dạng YYYY-MM-DD. Hôm nay là ${today}. Nếu bài ghi "11 phút trước", "1 ngày trước", "Hôm qua lúc 10:00", hãy tính toán ra ngày chính xác YYYY-MM-DD dựa vào hôm nay. Nếu ghi "Ngày 1 tháng 5", năm hiện tại là ${today.split('-')[0]}, trả về YYYY-MM-DD tương ứng.
   - content: toàn bộ nội dung chữ của bài post
   - image_description: nếu bài có chứa hình ảnh, hãy mô tả chi tiết hình ảnh đó bằng văn bản. Nếu không có ảnh thì để rỗng "".
   - likes, comments, shares: lấy số lượng chính xác, chuyển các chữ K, M, Tr thành số (VD: 1.2K -> 1200). Nếu không thấy thì để 0.
@@ -649,17 +670,22 @@ Chỉ trả về JSON, không kèm giải thích.`;
     });
   }
 
-  async extractPosts(page, limit = 5) {
+  async extractPosts(page, limitStr = '10') {
+    const isDateLimit = /^\\d{4}-\\d{2}-\\d{2}$/.test(String(limitStr).trim());
+    const limitCount = isDateLimit ? Infinity : (parseInt(limitStr) || 10);
+    const limitDate = isDateLimit ? new Date(String(limitStr).trim()) : null;
+
     console.log(
-      `[DOM] Bắt đầu bóc tách tuần tự ${limit} bài viết...`
+      `[DOM] Bắt đầu bóc tách tuần tự (Limit: ${limitStr})...`
     );
 
     const posts = [];
     const vision = new VisionHelper();
 
     const processedUrls = new Set();
+    let consecutiveOldPosts = 0;
 
-    for (let i = 0; i < limit; i++) {
+    for (let i = 0; i < limitCount; i++) {
       try {
 
         // =====================================================
@@ -967,6 +993,27 @@ Chỉ trả về JSON, không kèm giải thích.`;
         }
 
         // =====================================================
+        // DATE LIMIT CHECK
+        // =====================================================
+
+        let isOlder = false;
+        if (isDateLimit && time) {
+          const postDate = new Date(time);
+          if (!isNaN(postDate) && postDate < limitDate) {
+            isOlder = true;
+            console.log(`[DOM] Bài viết cũ hơn ngày limit (${time} < ${limitStr}).`);
+            consecutiveOldPosts++;
+          } else {
+            consecutiveOldPosts = 0;
+          }
+        }
+
+        if (isOlder && consecutiveOldPosts >= 2) {
+           console.log(`[DOM] Đã gặp nhiều bài viết liên tiếp cũ hơn limit. Dừng scrape.`);
+           break;
+        }
+
+        // =====================================================
         // PUSH POST
         // =====================================================
 
@@ -988,6 +1035,7 @@ Chỉ trả về JSON, không kèm giải thích.`;
           source: 'vision',
           raw_html: html
         });
+        fs.writeFileSync(path.join(CONFIG.SESSION_DIR, 'temp_posts.json'), JSON.stringify(posts, null, 2));
 
         console.log(
           `✅ [DONE] Post ${i + 1}`
@@ -1008,7 +1056,7 @@ Chỉ trả về JSON, không kèm giải thích.`;
     return posts;
   }
 
-  async scrape(url, limit = 5, needManualLogin = false) {
+  async scrape(url, limitStr = '10', needManualLogin = false) {
     const page = await this.context.newPage();
 
     try {
@@ -1032,7 +1080,7 @@ Chỉ trả về JSON, không kèm giải thích.`;
       await page.mouse.wheel(0, -800);
       await page.waitForTimeout(2000);
 
-      const posts = await this.extractPosts(page, limit);
+      const posts = await this.extractPosts(page, limitStr);
 
       await page.close();
 
@@ -1051,7 +1099,12 @@ Chỉ trả về JSON, không kèm giải thích.`;
   }
 }
 
-async function universalScrape(url, limit = 5) {
+async function universalScrape(url, limitStr = '10') {
+  cleanupImages();
+  if (fs.existsSync(path.join(CONFIG.SESSION_DIR, 'temp_posts.json'))) {
+    fs.unlinkSync(path.join(CONFIG.SESSION_DIR, 'temp_posts.json'));
+  }
+
   const platform = detectPlatform(url);
   const sessionPath = path.join(CONFIG.SESSION_DIR, 'fb_session.json');
   
@@ -1092,21 +1145,26 @@ async function universalScrape(url, limit = 5) {
     }
 
     // Truyền biến needManualLogin xuống để kích hoạt luồng handleLogin
-    const result = await scraper.scrape(url, limit, needManualLogin);
+    const result = await scraper.scrape(url, limitStr, needManualLogin);
     
     // In ra kết quả JSON cuối cùng để Agent-Orchestrator hứng lấy
     console.log(JSON.stringify(result));
 
   } catch (err) {
     logError(err.message);
-    console.log(JSON.stringify({ status: 'error', error: err.message, url }));
+    let partialPosts = [];
+    const tempFile = path.join(CONFIG.SESSION_DIR, 'temp_posts.json');
+    if (fs.existsSync(tempFile)) {
+      try { partialPosts = JSON.parse(fs.readFileSync(tempFile, 'utf8')); } catch(e){}
+    }
+    console.log(JSON.stringify({ status: 'error', error: err.message, url, posts: partialPosts }));
   } finally {
     await browser.close();
   }
 }
 
 const targetUrl = process.argv[2];
-const targetLimit = parseInt(process.argv[3]) || 10;
+const targetLimit = process.argv[3] || '10';
 
 if (!targetUrl) {
   console.log(JSON.stringify({ status: 'error', error: 'Missing URL' }));

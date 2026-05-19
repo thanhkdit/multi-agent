@@ -43,7 +43,7 @@ Hệ thống của bạn hỗ trợ đúng 2 kịch bản (scripts):
 
 ## 2. universal_scraper.js (Trích xuất Page Feed)
 - **Mục tiêu:** Truy cập `facebook.com`, vào thẳng page theo URL cung cấp, quét nội dung bài viết và tương tác.
-- **Tham số nhận vào:** `<url_page>` và `<limit>`
+- **Tham số nhận vào:** `<url_page>` và `<limit>`. Lưu ý: `<limit>` có thể là số nguyên (số bài viết) HOẶC chuỗi ngày tháng định dạng YYYY-MM-DD (ví dụ: "2023-10-25") để quét đến ngày đăng tương ứng.
 - **Đầu ra:** JSON chứa thông tin page, bài viết, số lượng Like/Comment/Share.
 
 ---

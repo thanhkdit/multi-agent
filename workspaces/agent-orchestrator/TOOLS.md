@@ -5,8 +5,8 @@
 
 ---
 
-:::caution[Cấu hình Timeout]
-Quá trình cào dữ liệu qua giao diện (Browser + Vision AI) rất mất thời gian. Bạn LUÔN LUÔN phải set `timeoutSeconds` tối thiểu là **600** (10 phút) để tránh việc agent bị kill giữa chừng.
+::caution[Cấu hình Timeout]
+Quá trình cào dữ liệu qua giao diện (Browser + Vision AI) rất mất thời gian. Bạn LUÔN LUÔN phải set `timeoutSeconds` là 60s
 :::
 
 # DELEGATION & EXECUTION HISTORY

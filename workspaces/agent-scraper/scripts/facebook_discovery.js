@@ -28,6 +28,26 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function cleanupImages() {
+  const dirs = [
+    path.join(__dirname, '../debug'),
+    path.join(__dirname, '../images'),
+    path.join(__dirname, '../screenshots')
+  ];
+  for (const dir of dirs) {
+    if (fs.existsSync(dir)) {
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        if (file.match(/\\.(jpg|jpeg|png)$/i)) {
+          try {
+            fs.unlinkSync(path.join(dir, file));
+          } catch(e) {}
+        }
+      }
+    }
+  }
+}
+
 function normalizeText(str = "") {
   return String(str)
     .toLowerCase()
@@ -355,6 +375,7 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT) {
         const extractedJson = await vision.extractAllInfoFromScreenshot(imageBuffer);
         if (extractedJson) {
            rawResults.push(extractedJson);
+           fs.writeFileSync(path.join(CONFIG.DEBUG_DIR, 'temp_ads.json'), JSON.stringify(rawResults, null, 2));
         }
       } catch (err) {
         console.log(`[VISION ERROR] ${err.message}`);
@@ -381,6 +402,8 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT) {
 }
 
 async function main() {
+  cleanupImages();
+  
   const query = process.argv[2];
   const limitArg = process.argv[3];
   const limit = Number(limitArg) > 0 ? Number(limitArg) : CONFIG.DEFAULT_LIMIT;
@@ -392,12 +415,24 @@ async function main() {
   }
 
   try {
-    return await handleAdsLibraryLookup(query, limit);
+    if (fs.existsSync(path.join(CONFIG.DEBUG_DIR, 'temp_ads.json'))) {
+      fs.unlinkSync(path.join(CONFIG.DEBUG_DIR, 'temp_ads.json'));
+    }
+    await handleAdsLibraryLookup(query, limit);
   } catch (err) {
-    return outputError(err.message || "unknown_error", {
+    let partialResults = [];
+    const tempFile = path.join(CONFIG.DEBUG_DIR, 'temp_ads.json');
+    if (fs.existsSync(tempFile)) {
+      try { partialResults = JSON.parse(fs.readFileSync(tempFile, 'utf8')); } catch(e){}
+    }
+    output({
+      type: "ads_library_lookup",
       query,
-      limit
+      limit,
+      error: err.message,
+      results: partialResults
     });
+  } finally {
   }
 }
 
