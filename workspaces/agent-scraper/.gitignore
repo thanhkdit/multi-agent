@@ -5,6 +5,7 @@ debug/
 screenshots/
 /browser-data/
 .openclaw/
+.venv/
 
 # Environment variables
 .env

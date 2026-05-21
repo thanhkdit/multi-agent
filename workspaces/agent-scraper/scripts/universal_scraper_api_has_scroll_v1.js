@@ -15,6 +15,10 @@ const CONFIG = {
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// =========================
+// CLEANUP OLD FILES
+// =========================
+
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
 }
@@ -29,34 +33,16 @@ function clearFilesByExtensions(dirPath, extensions = []) {
 
     try {
       const stat = fs.statSync(filePath);
+
       if (stat.isDirectory()) continue;
 
       const ext = path.extname(file).toLowerCase();
+
       if (extensions.includes(ext)) {
         fs.unlinkSync(filePath);
       }
     } catch (err) {
-      // console.log(`⚠️ Không thể xóa file: ${filePath} - ${err.message}`);
-    }
-  }
-}
-
-function cleanupImages() {
-  const dirs = [
-    path.join(__dirname, '../debug'),
-    path.join(__dirname, '../images'),
-    path.join(__dirname, '../screenshots')
-  ];
-  for (const dir of dirs) {
-    if (fs.existsSync(dir)) {
-      const files = fs.readdirSync(dir);
-      for (const file of files) {
-        if (file.match(/\\.(jpg|jpeg|png)$/i)) {
-          try {
-            fs.unlinkSync(path.join(dir, file));
-          } catch(e) {}
-        }
-      }
+      console.log(`⚠️ Không thể xóa file: ${filePath} - ${err.message}`);
     }
   }
 }
@@ -187,14 +173,6 @@ function makePostKey(post) {
   return JSON.stringify(post).slice(0, 300);
 }
 
-function sortPostsByTime(posts) {
-  return [...posts].sort((a, b) => {
-    const ta = Number(a?.time || 0);
-    const tb = Number(b?.time || 0);
-    return tb - ta;
-  });
-}
-
 class AIHelper {
   constructor() {
     this.apiKey = process.env.NINEROUTER_API_KEY;
@@ -237,11 +215,12 @@ class AIHelper {
 
   async extractPostsFromData(jsonData) {
     if (!this.apiKey) {
-      // console.log('❌ [AI] Không tìm thấy API KEY');
+      console.log('❌ [AI] Không tìm thấy API KEY');
       return [];
     }
 
     const sanitizedData = cleanFacebookData(jsonData);
+
     const MAX_CHUNK_SIZE = 150000;
 
     const sourceArray = Array.isArray(sanitizedData)
@@ -249,6 +228,7 @@ class AIHelper {
       : [sanitizedData];
 
     const chunks = [];
+
     let currentChunk = [];
     let currentLength = 0;
 
@@ -256,7 +236,10 @@ class AIHelper {
       const serialized = JSON.stringify(item);
       const len = serialized.length;
 
-      if (currentChunk.length > 0 && currentLength + len > MAX_CHUNK_SIZE) {
+      if (
+        currentChunk.length > 0 &&
+        currentLength + len > MAX_CHUNK_SIZE
+      ) {
         chunks.push(currentChunk);
         currentChunk = [];
         currentLength = 0;
@@ -270,7 +253,9 @@ class AIHelper {
       chunks.push(currentChunk);
     }
 
-    // console.log(`[AI Chunking] total_objects=${sourceArray.length} chunks=${chunks.length}`);
+    console.log(
+      `[AI Chunking] total_objects=${sourceArray.length} chunks=${chunks.length}`
+    );
 
     const allPosts = [];
 
@@ -279,37 +264,37 @@ class AIHelper {
       const jsonString = JSON.stringify(chunk);
 
       const prompt = `
-Bạn là một chuyên gia bóc tách dữ liệu từ Facebook GraphQL API.
+  Bạn là một chuyên gia bóc tách dữ liệu từ Facebook GraphQL API.
 
-Nhiệm vụ:
-- Trích xuất TẤT CẢ bài viết thật.
-- Clean text.
-- Bỏ metadata/tracking.
-- Không bỏ sót bài.
+  Nhiệm vụ:
+  - Trích xuất TẤT CẢ bài viết thật.
+  - Clean text.
+  - Bỏ metadata/tracking.
+  - Không bỏ sót bài.
 
-Schema:
-{
-  "posts": [
-    {
-      "header": "",
-      "content": "",
-      "url": "",
-      "reaction": 0,
-      "comments": 0,
-      "shares": 0,
-      "time": 0
-    }
-  ]
-}
+  Schema:
+  {
+    "posts": [
+      {
+        "header": "",
+        "content": "",
+        "url": "",
+        "reaction": 0,
+        "comments": 0,
+        "shares": 0,
+        "time": 0
+      }
+    ]
+  }
 
-QUAN TRỌNG:
-- Chỉ trả JSON hợp lệ.
-- Không markdown.
-- Không giải thích.
-- Không copy text quá dư thừa.
-- Không lặp nội dung.
-- Chỉ giữ nội dung post cần thiết.
-`;
+  QUAN TRỌNG:
+  - Chỉ trả JSON hợp lệ.
+  - Không markdown.
+  - Không giải thích.
+  - Không copy text quá dư thừa.
+  - Không lặp nội dung.
+  - Chỉ giữ nội dung post cần thiết.
+  `;
 
       const payload = {
         model: 'free-combo',
@@ -332,7 +317,7 @@ QUAN TRỌNG:
 
       for (let retry = 0; retry < 3; retry++) {
         try {
-          // console.log(`[AI Data] Chunk ${i + 1}/${chunks.length} retry=${retry}`);
+          console.log(`[AI Data] Chunk ${i + 1}/${chunks.length} retry=${retry}`);
 
           const response = await axios.post(this.apiUrl, payload, {
             headers: {
@@ -370,7 +355,7 @@ QUAN TRỌNG:
           success = true;
           break;
         } catch (err) {
-          // console.log(`❌ [AI Chunk Error] ${err.message}`);
+          console.log(`❌ [AI Chunk Error] ${err.message}`);
 
           if (retry === 2) {
             fs.writeFileSync(
@@ -384,7 +369,7 @@ QUAN TRỌNG:
       }
 
       if (!success) {
-        // console.log(`❌ [AI] Failed chunk ${i + 1}`);
+        console.log(`❌ [AI] Failed chunk ${i + 1}`);
       }
     }
 
@@ -397,7 +382,6 @@ class FacebookScraper {
     this.context = context;
     this.graphqlQueue = [];
     this.responseListenerInstalled = false;
-    this.pendingAiTasks = [];
   }
 
   installGraphqlListener(page) {
@@ -433,7 +417,7 @@ class FacebookScraper {
           ts: Date.now()
         });
       } catch (e) {
-        // console.log('❌ [NETWORK] Lỗi đọc GraphQL response:', e.message);
+        console.log('❌ [NETWORK] Lỗi đọc GraphQL response:', e.message);
       }
     });
   }
@@ -446,29 +430,29 @@ class FacebookScraper {
 
   async handleLogin(page) {
     const sessionPath = path.join(CONFIG.SESSION_DIR, 'fb_session.json');
-    // console.log('🚀 [MANUAL LOGIN] Đang mở Facebook để kiểm tra trạng thái đăng nhập...');
+    console.log('🚀 [MANUAL LOGIN] Đang mở Facebook để kiểm tra trạng thái đăng nhập...');
     await page.goto('https://facebook.com', { waitUntil: 'networkidle', timeout: 60000 });
 
     const isAlreadyLoggedIn = await page.locator('div[role="navigation"]').count() > 0;
 
     if (!isAlreadyLoggedIn) {
-      // console.log('👉 Cần đăng nhập thủ công trên trình duyệt.');
-      // console.log('⏳ Đang chờ vào được Newsfeed...');
+      console.log('👉 Cần đăng nhập thủ công trên trình duyệt.');
+      console.log('⏳ Đang chờ vào được Newsfeed...');
       try {
         await page.waitForSelector('div[role="navigation"]', { timeout: 300000 });
-        // console.log('✅ [MANUAL LOGIN] Đã nhận diện đăng nhập thành công!');
+        console.log('✅ [MANUAL LOGIN] Đã nhận diện đăng nhập thành công!');
       } catch (e) {
         throw new Error('❌ [MANUAL LOGIN] Quá thời gian chờ đăng nhập.');
       }
     } else {
-      // console.log('✅ [MANUAL LOGIN] Tài khoản đã ở trạng thái đăng nhập sẵn.');
+      console.log('✅ [MANUAL LOGIN] Tài khoản đã ở trạng thái đăng nhập sẵn.');
     }
 
     await this.context.storageState({ path: sessionPath });
   }
 
   async extractPageInfo(page) {
-    // console.log('[VISION] Lấy thông tin Page...');
+    console.log('[VISION] Lấy thông tin Page...');
     const ai = new AIHelper();
 
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
@@ -483,52 +467,6 @@ class FacebookScraper {
 
     if (aiData && aiData.name) return aiData;
     return { name: '', followers: '0', likes: '0', description: '' };
-  }
-
-  normalizePost(p) {
-    return {
-      header: p?.header || '',
-      content: p?.content || '',
-      url: p?.url || '',
-      reaction: Number(p?.reaction || 0),
-      comments: Number(p?.comments || 0),
-      shares: Number(p?.shares || 0),
-      time: toUnixSeconds(p?.time),
-      time_text: '',
-      platform: 'facebook',
-      source: 'api_graphql'
-    };
-  }
-
-  mergeExtractedPosts(posts, seenPosts, allExtractedPosts) {
-    for (const p of posts || []) {
-      const post = this.normalizePost(p);
-      post.time_text = formatUnixSeconds(post.time);
-
-      const key = makePostKey(post);
-      if (!key || seenPosts.has(key)) continue;
-      seenPosts.add(key);
-
-      allExtractedPosts.push(post);
-    }
-  }
-
-  submitAiJob(batchData, ai, seenPosts, allExtractedPosts, batchLabel) {
-    const task = ai.extractPostsFromData(batchData)
-      .then((posts) => {
-        if (Array.isArray(posts) && posts.length > 0) {
-          // console.log(`✅ [AI] ${batchLabel} bóc tách được ${posts.length} bài viết`);
-          this.mergeExtractedPosts(posts, seenPosts, allExtractedPosts);
-        } else {
-          // console.log(`⚠️ [AI] ${batchLabel} không có bài viết hợp lệ`);
-        }
-      })
-      .catch((err) => {
-        // console.log(`❌ [AI] ${batchLabel} lỗi: ${err.message}`);
-      });
-
-    this.pendingAiTasks.push(task);
-    return task;
   }
 
   async scrape(url, limitStr = '10', needManualLogin = false) {
@@ -556,21 +494,30 @@ class FacebookScraper {
 
       const pageInfo = await this.extractPageInfo(page);
 
-      // console.log(`[DOM] Bắt đầu cuộn trang để kích hoạt API load bài... (Mục tiêu: ${limitStr})`);
-      // console.log('[ASYNC] AI jobs sẽ được gửi ngay khi GraphQL xuất hiện, không chờ từng lần phân tích.');
+      console.log(`[DOM] Bắt đầu cuộn trang để kích hoạt API load bài... (Mục tiêu: ${limitStr})`);
 
       let scrollAttempts = 0;
-      let submittedGraphqlCount = 0;
-      const estimatedGraphqlTarget = isDateLimit ? 200 : Math.max(Math.ceil(limitCount / 3) + 2, 3);
-      const maxScrolls = isDateLimit ? 200 : Math.max(estimatedGraphqlTarget * 3, 30);
+      const maxScrolls = isDateLimit ? 200 : Math.max(limitCount * 3, 50);
 
       while (scrollAttempts < maxScrolls) {
-        if (!isDateLimit && submittedGraphqlCount >= estimatedGraphqlTarget) {
-          break;
+        if (!isDateLimit && allExtractedPosts.length >= limitCount) break;
+        if (isDateLimit && allExtractedPosts.length > 0) {
+          const oldest = allExtractedPosts[allExtractedPosts.length - 1];
+          const oldestUnix = toUnixSeconds(oldest.time);
+          if (oldestUnix && oldestUnix < limitDateUnix) break;
         }
 
         await page.mouse.wheel(0, 2400);
-        await sleep(700);
+
+        await Promise.race([
+          page.waitForResponse(
+            r => r.url().includes('/api/graphql/'),
+            { timeout: 5000 }
+          ).catch(() => null),
+          sleep(5000)
+        ]);
+
+        await sleep(1200);
 
         const batches = this.drainGraphqlQueue();
         if (batches.length === 0) {
@@ -578,50 +525,76 @@ class FacebookScraper {
           continue;
         }
 
-        for (let i = 0; i < batches.length; i++) {
-          const batch = batches[i];
+        let postsFromAPI = [];
+
+        for (const batch of batches) {
           const batchData = batch.objects || [];
 
           if (!batchData.length) continue;
 
           const rawStringCheck = JSON.stringify(batchData);
+
           if (
             !rawStringCheck.includes('creation_time') &&
             !rawStringCheck.includes('story') &&
             !rawStringCheck.includes('comet_sections')
           ) {
-            // console.log('⏩ [SKIP] Batch không có dấu hiệu post');
+            console.log('⏩ [SKIP] Batch không có dấu hiệu post');
             continue;
           }
 
-          submittedGraphqlCount++;
-          const batchLabel = `GraphQL batch #${submittedGraphqlCount}`;
-          this.submitAiJob(batchData, ai, seenPosts, allExtractedPosts, batchLabel);
+          const extracted = await ai.extractPostsFromData(batchData);
+
+          if (Array.isArray(extracted) && extracted.length > 0) {
+            postsFromAPI.push(...extracted);
+          }
+        }
+
+        if (postsFromAPI.length > 0) {
+          console.log(`✅ [AI] Bóc tách được ${postsFromAPI.length} bài viết từ GraphQL batch`);
+
+          for (const p of postsFromAPI) {
+            const post = {
+              header: p?.header || '',
+              content: p?.content || '',
+              url: p?.url || '',
+              reaction: Number(p?.reaction || 0),
+              comments: Number(p?.comments || 0),
+              shares: Number(p?.shares || 0),
+              time: toUnixSeconds(p?.time),
+              time_text: ''
+            };
+
+            post.time_text = formatUnixSeconds(post.time);
+
+            const key = makePostKey(post);
+            if (!key || seenPosts.has(key)) continue;
+            seenPosts.add(key);
+
+            allExtractedPosts.push({
+              ...post,
+              platform: 'facebook',
+              source: 'api_graphql'
+            });
+
+            if (!isDateLimit && allExtractedPosts.length >= limitCount) break;
+            if (isDateLimit && post.time && post.time < limitDateUnix) break;
+          }
         }
 
         if (isDateLimit && allExtractedPosts.length > 0) {
-          const newestKnownOldest = sortPostsByTime(allExtractedPosts)[allExtractedPosts.length - 1];
-          const oldestUnix = toUnixSeconds(newestKnownOldest?.time);
-          if (oldestUnix && oldestUnix < limitDateUnix) {
-            break;
-          }
+          const lastPost = allExtractedPosts[allExtractedPosts.length - 1];
+          if (lastPost.time && lastPost.time < limitDateUnix) break;
         }
 
         scrollAttempts++;
       }
 
-      // console.log(`[ASYNC] Đã submit ${submittedGraphqlCount} GraphQL batch, chờ toàn bộ AI jobs hoàn tất...`);
-      await Promise.allSettled(this.pendingAiTasks);
-
-      let finalPosts = sortPostsByTime(allExtractedPosts);
-
-      if (isDateLimit) {
-        finalPosts = finalPosts.filter(p => Number(p.time || 0) >= limitDateUnix);
-      } else if (finalPosts.length > limitCount) {
-        finalPosts = finalPosts.slice(0, limitCount);
-      }
-
       await page.close();
+
+      if (!isDateLimit && allExtractedPosts.length > limitCount) {
+        allExtractedPosts.length = limitCount;
+      }
 
       const result = {
         status: 'success',
@@ -629,13 +602,13 @@ class FacebookScraper {
         url,
         scraped_at: new Date().toISOString(),
         page_info: pageInfo,
-        total_extracted: finalPosts.length,
-        posts: finalPosts
+        total_extracted: allExtractedPosts.length,
+        posts: allExtractedPosts
       };
 
       fs.writeFileSync(
         path.join(CONFIG.SESSION_DIR, 'temp_posts.json'),
-        JSON.stringify(finalPosts, null, 2)
+        JSON.stringify(allExtractedPosts, null, 2)
       );
 
       return result;
@@ -672,6 +645,7 @@ async function universalScrape(url, limitStr = '10') {
   try {
     const scraper = new FacebookScraper(context);
     const result = await scraper.scrape(url, limitStr, needManualLogin);
+    console.log(JSON.stringify(result));
   } catch (err) {
     logError(err.message);
     let partialPosts = [];
@@ -681,6 +655,7 @@ async function universalScrape(url, limitStr = '10') {
         partialPosts = JSON.parse(fs.readFileSync(tempFile, 'utf8'));
       } catch (e) {}
     }
+    console.log(JSON.stringify({ status: 'error', error: err.message, url, posts: partialPosts }));
   } finally {
     await browser.close();
   }
@@ -690,17 +665,35 @@ const targetUrl = process.argv[2];
 const targetLimit = process.argv[3] || '10';
 
 if (!targetUrl) {
-  // console.log(JSON.stringify({ status: 'error', error: 'Missing URL' }));
+  console.log(JSON.stringify({ status: 'error', error: 'Missing URL' }));
   process.exit(1);
 }
 
+// RUN SCRIPT
+
+// Tạo folder nếu chưa có
 ensureDir(CONFIG.SESSION_DIR);
 ensureDir(CONFIG.IMAGE_DIR);
 ensureDir(CONFIG.SCREENSHOT_DIR);
 ensureDir(CONFIG.DEBUG_DIR);
 
-clearFilesByExtensions(CONFIG.DEBUG_DIR, ['.json', '.txt']);
-clearFilesByExtensions(CONFIG.IMAGE_DIR, ['.jpg', '.jpeg', '.png', '.webp']);
-clearFilesByExtensions(CONFIG.SCREENSHOT_DIR, ['.jpg', '.jpeg', '.png', '.webp']);
+// Xóa file debug json
+clearFilesByExtensions(CONFIG.DEBUG_DIR, ['.json','.txt']);
+
+// Xóa toàn bộ ảnh cũ
+clearFilesByExtensions(CONFIG.IMAGE_DIR, [
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.webp'
+]);
+
+// Xóa screenshot cũ
+clearFilesByExtensions(CONFIG.SCREENSHOT_DIR, [
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.webp'
+]);
 
 universalScrape(targetUrl, targetLimit);

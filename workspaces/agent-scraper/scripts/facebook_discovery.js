@@ -3,9 +3,10 @@
 const { createBrowser } = require("./browser");
 const fs = require("fs");
 const path = require("path");
-const axios = require("axios");
 
-require('dotenv').config({ path: path.join(__dirname, '../.env') }); 
+require("dotenv").config({
+  path: path.join(__dirname, "../.env")
+});
 
 const CONFIG = {
   DEBUG_DIR: path.join(__dirname, "..", "debug"),
@@ -15,17 +16,30 @@ const CONFIG = {
 
   LOAD_WAIT_MS: 8000,
   INPUT_POPUP_WAIT_MS: 3000,
-  AFTER_PAGE_CLICK_WAIT_MS: 5000,
-  SCROLL_WAIT_MS: 2500,
-
-  MAX_SCROLL_ROUND: 10
+  AFTER_PAGE_CLICK_WAIT_MS: 5000
 };
 
 fs.mkdirSync(CONFIG.DEBUG_DIR, { recursive: true });
 fs.mkdirSync(CONFIG.SCREENSHOT_DIR, { recursive: true });
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+function cleanupImages() {
+  const dirs = [
+    path.join(__dirname, "../debug"),
+    path.join(__dirname, "../images"),
+    path.join(__dirname, "../screenshots")
+  ];
+
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) continue;
+
+    for (const file of fs.readdirSync(dir)) {
+      if (/\.(jpg|jpeg|png|json)$/i.test(file)) {
+        try {
+          fs.unlinkSync(path.join(dir, file));
+        } catch (_) {}
+      }
+    }
+  }
 }
 
 function cleanupImages() {
@@ -49,16 +63,11 @@ function cleanupImages() {
 }
 
 function normalizeText(str = "") {
-  return String(str)
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, " ");
+  return String(str).toLowerCase().trim().replace(/\s+/g, " ");
 }
 
 function safeFileName(name) {
-  return String(name)
-    .replace(/[^a-zA-Z0-9-_]/g, "_")
-    .slice(0, 100);
+  return String(name).replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 100);
 }
 
 function output(data) {
@@ -71,34 +80,6 @@ function outputError(reason, extra = {}) {
     reason,
     ...extra
   });
-}
-
-function parseMaybeJson(raw) {
-  if (!raw) return null;
-
-  if (typeof raw === "object") {
-    return raw;
-  }
-
-  const cleaned = String(raw)
-    .replace(/```json/gi, "")
-    .replace(/```/g, "")
-    .trim();
-
-  try {
-    return JSON.parse(cleaned);
-  } catch (_) {}
-
-  const first = cleaned.indexOf("{");
-  const last = cleaned.lastIndexOf("}");
-
-  if (first >= 0 && last > first) {
-    try {
-      return JSON.parse(cleaned.slice(first, last + 1));
-    } catch (_) {}
-  }
-
-  return null;
 }
 
 function extractPageIdFromUrl(url = "") {
@@ -114,139 +95,54 @@ function extractPageIdFromUrl(url = "") {
   }
 }
 
-class VisionHelper {
-  constructor() {
-    this.apiKey = process.env.NINEROUTER_API_KEY;
-    this.apiUrl = `${process.env.NINEROUTER_URL || ""}/chat/completions`;
-    this.model = process.env.NINEROUTER_MODEL || "image-combo";
+function isTargetGraphqlResponse(response) {
+  try {
+    const url = response.url();
+    if (!url.includes("/api/graphql/")) return false;
+
+    const postData = response.request().postData() || "";
+    return (
+      postData.includes("AdLibraryMobileFocusedStateProviderRefetchQuery") ||
+      postData.includes("doc_id=24739843032379348")
+    );
+  } catch (_) {
+    return false;
   }
+}
 
-  async analyzeImage(imageBuffer, prompt) {
-    if (!this.apiKey || !process.env.NINEROUTER_URL) {
-      throw new Error("Missing NINEROUTER_API_KEY or NINEROUTER_URL");
-    }
+function findSearchInputByValue(page, query) {
+  return (async () => {
+    const normalizedQuery = normalizeText(query);
+    const inputs = page.locator("input");
+    const count = await inputs.count();
 
-    const base64 = imageBuffer.toString("base64");
+    for (let i = 0; i < count; i++) {
+      const input = inputs.nth(i);
 
-    const payload = {
-      model: this.model,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:image/jpeg;base64,${base64}`,
-                detail: "low"
-              }
-            }
-          ]
+      try {
+        if (!(await input.isVisible())) continue;
+
+        const value = await input.inputValue().catch(() => "");
+        const normalizedValue = normalizeText(value);
+
+        if (
+          normalizedValue === normalizedQuery ||
+          normalizedValue.includes(normalizedQuery) ||
+          normalizedQuery.includes(normalizedValue)
+        ) {
+          return input;
         }
-      ],
-      response_format: { type: "json_object" }
-    };
-
-    const response = await axios.post(this.apiUrl, payload, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`
-      },
-      timeout: 60000
-    });
-
-    const content = response?.data?.choices?.[0]?.message?.content || "";
-    const parsed = parseMaybeJson(content);
-
-    if (!parsed) {
-      throw new Error(`Cannot parse AI response: ${content.slice(0, 700)}`);
+      } catch (_) {}
     }
 
-    return parsed;
-  }
-
-  async extractAllInfoFromScreenshot(imageBuffer) {
-    const prompt = `
-Bạn đang nhìn thấy screenshot của một trang web (Facebook Ads Library hoặc Facebook Page).
-Nhiệm vụ: Trích xuất toàn bộ thông tin hiển thị trong ảnh. Bao gồm tên trang, thông tin người dùng, nội dung bài viết/quảng cáo, số lượng tương tác, thời gian, mô tả, trạng thái, và mọi text hiển thị khác.
-
-Trả về một JSON object chứa toàn bộ dữ liệu bạn có thể đọc được.
-Ví dụ cấu trúc trả về (có thể tự do tuỳ biến thêm tuỳ theo nội dung ảnh để giữ lại toàn bộ thông tin):
-{
-  "page_info": { "name": "...", "followers": "..." },
-  "items": [
-    {
-      "content": "...",
-      "status": "...",
-      "metrics": { ... }
-    }
-  ],
-  "other_text": "..."
-}
-Tuyệt đối chỉ trả về định dạng JSON hợp lệ, không kèm bất kỳ giải thích nào. Nếu có lỗi thì trả về json rỗng kèm lỗi.
-`;
-
-    const data = await this.analyzeImage(imageBuffer, prompt);
-    return data;
-  }
-}
-
-async function expandAdDetails(page) {
-  await page.evaluate(() => {
-    const labels = [
-      "See ad details",
-      "Xem chi tiết quảng cáo",
-      "See summary details",
-      "See more",
-      "Xem thêm"
-    ];
-
-    const nodes = document.querySelectorAll('div[role="button"], span, a');
-
-    for (const node of nodes) {
-      const text = node.innerText?.trim();
-      if (!text) continue;
-
-      if (labels.some(label => text.includes(label))) {
-        try {
-          node.click();
-        } catch (_) {}
-      }
-    }
-  });
-}
-
-async function findSearchInputByValue(page, query) {
-  const normalizedQuery = normalizeText(query);
-  const inputs = page.locator("input");
-  const count = await inputs.count();
-
-  for (let i = 0; i < count; i++) {
-    const input = inputs.nth(i);
-
-    try {
-      const visible = await input.isVisible();
-      if (!visible) continue;
-
-      const value = await input.inputValue().catch(() => "");
-      const normalizedValue = normalizeText(value);
-
-      if (
-        normalizedValue === normalizedQuery ||
-        normalizedValue.includes(normalizedQuery) ||
-        normalizedQuery.includes(normalizedValue)
-      ) {
-        return input;
-      }
-    } catch (_) {}
-  }
-
-  return null;
+    return null;
+  })();
 }
 
 async function clickFirstPopupPageOption(page) {
-  let option = page.locator('li[role="option"][aria-selected="false"][id^="pageID:"]').first();
+  let option = page
+    .locator('li[role="option"][aria-selected="false"][id^="pageID:"]')
+    .first();
 
   try {
     await option.waitFor({
@@ -280,13 +176,273 @@ async function clickFirstPopupPageOption(page) {
   }
 }
 
+function extractJsonObjectsFromText(text) {
+  const objects = [];
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  let start = -1;
 
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (inString) {
+      if (escape) {
+        escape = false;
+      } else if (ch === "\\") {
+        escape = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (ch === "{") {
+      if (depth === 0) start = i;
+      depth++;
+      continue;
+    }
+
+    if (ch === "}") {
+      if (depth > 0) depth--;
+      if (depth === 0 && start !== -1) {
+        objects.push(text.slice(start, i + 1));
+        start = -1;
+      }
+    }
+  }
+
+  return objects;
+}
+
+function parseResponseFragments(text) {
+  const trimmed = String(text || "").trim();
+  if (!trimmed) return [];
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch (_) {}
+
+  const fragments = extractJsonObjectsFromText(trimmed);
+  const results = [];
+
+  for (const fragment of fragments) {
+    try {
+      results.push(JSON.parse(fragment));
+    } catch (_) {}
+  }
+
+  return results;
+}
+
+function isMeaningfulText(value) {
+  if (value === null || value === undefined) return false;
+  const text = String(value).trim();
+  if (!text) return false;
+  if (/^\{\{.*\}\}$/.test(text)) return false;
+  return true;
+}
+
+function normalizeImage(image = {}) {
+  return {
+    original_image_url: image.original_image_url || "",
+    resized_image_url: image.resized_image_url || "",
+    watermarked_resized_image_url: image.watermarked_resized_image_url || ""
+  };
+}
+
+function normalizeVideo(video = {}) {
+  return {
+    video_hd_url: video.video_hd_url || "",
+    video_sd_url: video.video_sd_url || "",
+    video_preview_image_url: video.video_preview_image_url || "",
+    watermarked_video_hd_url: video.watermarked_video_hd_url || "",
+    watermarked_video_sd_url: video.watermarked_video_sd_url || ""
+  };
+}
+
+function normalizeCard(card = {}) {
+  return {
+    body: card.body || "",
+    caption: card.caption || "",
+    cta_text: card.cta_text || "",
+    cta_type: card.cta_type || "",
+    link_url: card.link_url || "",
+    link_description: card.link_description || "",
+    title: card.title || "",
+    original_image_url: card.original_image_url || "",
+    resized_image_url: card.resized_image_url || "",
+    video_hd_url: card.video_hd_url || "",
+    video_sd_url: card.video_sd_url || ""
+  };
+}
+
+function pickBestBodyText(item = {}) {
+  const bodyText = item?.body?.text;
+  if (isMeaningfulText(bodyText)) return bodyText;
+
+  if (Array.isArray(item?.cards)) {
+    const cardBodies = item.cards
+      .map((c) => c?.body)
+      .filter(isMeaningfulText);
+
+    if (cardBodies.length > 0) {
+      return cardBodies.join("\n\n");
+    }
+  }
+
+  return "";
+}
+
+function normalizeAdItem(item = {}, pageInfo = {}) {
+  const snapshot = item?.snapshot || {};
+  const bodyText = pickBestBodyText(item);
+  const adArchiveId = String(item?.ad_archive_id || "").trim();
+
+  return {
+    ad_archive_id: adArchiveId,
+    url: adArchiveId
+      ? `https://www.facebook.com/ads/library/?id=${encodeURIComponent(adArchiveId)}`
+      : "",
+
+    collation_id: item?.collation_id || "",
+    collation_count: item?.collation_count ?? null,
+    is_active: item?.is_active ?? null,
+
+    page_id: item?.page_id || snapshot?.page_id || pageInfo?.id || "",
+    page_name:
+      snapshot?.page_name ||
+      item?.page_name ||
+      pageInfo?.name ||
+      "",
+
+    page_profile_uri: snapshot?.page_profile_uri || "",
+    page_profile_picture_url: snapshot?.page_profile_picture_url || "",
+    page_like_count: item?.page_like_count ?? snapshot?.page_like_count ?? null,
+    page_categories: item?.page_categories || snapshot?.page_categories || [],
+
+    caption: item?.caption ?? snapshot?.caption ?? null,
+    cta_text: item?.cta_text ?? snapshot?.cta_text ?? null,
+    cta_type: item?.cta_type ?? snapshot?.cta_type ?? null,
+    display_format: item?.display_format ?? snapshot?.display_format ?? null,
+    title: item?.title ?? snapshot?.title ?? null,
+    link_url: item?.link_url ?? snapshot?.link_url ?? null,
+    link_description: item?.link_description ?? snapshot?.link_description ?? null,
+
+    body_text: bodyText,
+    cards: Array.isArray(item?.cards) ? item.cards.map(normalizeCard) : [],
+
+    images: Array.isArray(item?.images) ? item.images.map(normalizeImage) : [],
+    videos: Array.isArray(item?.videos) ? item.videos.map(normalizeVideo) : [],
+
+    publisher_platform: item?.publisher_platform || [],
+    start_date: item?.start_date ?? null,
+    end_date: item?.end_date ?? null,
+    total_active_time: item?.total_active_time ?? null,
+
+    has_user_reported: item?.has_user_reported ?? null,
+    report_count: item?.report_count ?? null,
+    contains_sensitive_content: item?.contains_sensitive_content ?? null,
+    hide_data_status: item?.hide_data_status ?? null,
+
+    raw: item
+  };
+}
+
+function shouldKeepAdByArchiveId(ad, seenArchiveIds) {
+  const adArchiveId = String(ad?.ad_archive_id || "").trim();
+
+  if (!adArchiveId) {
+    return false;
+  }
+
+  if (seenArchiveIds.has(adArchiveId)) {
+    return false;
+  }
+
+  seenArchiveIds.add(adArchiveId);
+  return true;
+}
+
+function collectAdCandidatesFromObject(
+  obj,
+  pageInfo = {},
+  out = [],
+  seenArchiveIds = new Set(),
+  limit = Infinity
+) {
+  if (!obj || typeof obj !== "object") return out;
+  if (out.length >= limit) return out;
+
+  if (Array.isArray(obj)) {
+    for (const entry of obj) {
+      if (out.length >= limit) break;
+      collectAdCandidatesFromObject(entry, pageInfo, out, seenArchiveIds, limit);
+    }
+    return out;
+  }
+
+  if (obj.ad_archive_id || obj.snapshot?.page_name || obj.body?.text || obj.cards) {
+    const normalized = normalizeAdItem(obj, pageInfo);
+
+    if (shouldKeepAdByArchiveId(normalized, seenArchiveIds)) {
+      out.push(normalized);
+      if (out.length >= limit) {
+        return out;
+      }
+    }
+  }
+
+  for (const value of Object.values(obj)) {
+    if (out.length >= limit) break;
+
+    if (value && typeof value === "object") {
+      collectAdCandidatesFromObject(
+        value,
+        pageInfo,
+        out,
+        seenArchiveIds,
+        limit
+      );
+    }
+  }
+
+  return out;
+}
+
+function extractAdsFromResponseText(responseText, seenArchiveIds = new Set(), limit = Infinity) {
+  const fragments = parseResponseFragments(responseText);
+  const allAds = [];
+
+  for (const fragment of fragments) {
+    if (allAds.length >= limit) break;
+
+    const pageInfo = fragment?.data?.page || fragment?.page || {};
+    collectAdCandidatesFromObject(
+      fragment,
+      pageInfo,
+      allAds,
+      seenArchiveIds,
+      limit
+    );
+  }
+
+  return allAds;
+}
 
 async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT) {
   const { page, close } = await createBrowser();
-  const vision = new VisionHelper();
-  const rawResults = [];
-  const screenshots = [];
+
+  const rawResponses = [];
+  const pendingResponseTasks = [];
+  const extractedAds = [];
+  const seenArchiveIds = new Set();
 
   try {
     const adsUrl =
@@ -302,6 +458,31 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT) {
       `&sort_data[mode]=total_impressions`;
 
     console.log(`[ADS LIBRARY URL] ${adsUrl}`);
+
+    page.on("response", (response) => {
+      if (!isTargetGraphqlResponse(response)) return;
+
+      const task = (async () => {
+        try {
+          const text = await response.text();
+
+          console.log(
+            `[DEBUG] GraphQL Response Intercepted. Length: ${text.length}`
+          );
+
+          fs.writeFileSync(
+            path.join(CONFIG.DEBUG_DIR, `graphql_response_${Date.now()}.json`),
+            text
+          );
+
+          rawResponses.push(text);
+        } catch (err) {
+          console.log(`[GRAPHQL READ ERROR] ${err.message}`);
+        }
+      })();
+
+      pendingResponseTasks.push(task);
+    });
 
     await page.goto(adsUrl, {
       waitUntil: "domcontentloaded",
@@ -335,55 +516,44 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT) {
 
     await page.waitForTimeout(CONFIG.AFTER_PAGE_CLICK_WAIT_MS);
 
+    await Promise.allSettled(pendingResponseTasks);
+
+    console.log(`[DEBUG] Total GraphQL Responses: ${rawResponses.length}`);
+
+    for (const responseText of rawResponses) {
+      if (extractedAds.length >= limit) break;
+
+      const remaining = limit - extractedAds.length;
+      const ads = extractAdsFromResponseText(
+        responseText,
+        seenArchiveIds,
+        remaining
+      );
+
+      if (ads.length > 0) {
+        extractedAds.push(...ads);
+      }
+
+      if (extractedAds.length >= limit) break;
+    }
+
+    console.log(`[DEBUG] Extracted Ads Count: ${seenArchiveIds.size}`);
+    console.log(`[DEBUG] Returned Ads Count: ${Math.min(extractedAds.length, limit)}`);
+
+    fs.writeFileSync(
+      path.join(CONFIG.DEBUG_DIR, "temp_ads.json"),
+      JSON.stringify(extractedAds, null, 2)
+    );
+
     const selectedPageUrl = page.url();
     const selectedPageId = extractPageIdFromUrl(selectedPageUrl);
 
     let selectedPageName = "";
     try {
-      selectedPageName = await page.locator("h1").first().innerText({ timeout: 5000 });
-      selectedPageName = String(selectedPageName || "").trim();
+      selectedPageName = String(
+        (await page.locator("h1").first().innerText({ timeout: 5000 })) || ""
+      ).trim();
     } catch (_) {}
-
-    const selectedShot = path.join(
-      CONFIG.DEBUG_DIR,
-      `ads_library_selected_${safeFileName(query)}_${Date.now()}.png`
-    );
-
-    await page.screenshot({
-      path: selectedShot,
-      fullPage: false
-    });
-
-    for (let round = 0; round < limit; round++) {
-      console.log(`[SCAN ROUND] ${round + 1}`);
-
-      const shotPath = path.join(
-        CONFIG.SCREENSHOT_DIR,
-        `ads_${safeFileName(query)}_${round + 1}.png`
-      );
-
-      await page.screenshot({
-        path: shotPath,
-        fullPage: false
-      });
-
-      screenshots.push(shotPath);
-
-      const imageBuffer = fs.readFileSync(shotPath);
-
-      try {
-        const extractedJson = await vision.extractAllInfoFromScreenshot(imageBuffer);
-        if (extractedJson) {
-           rawResults.push(extractedJson);
-           fs.writeFileSync(path.join(CONFIG.DEBUG_DIR, 'temp_ads.json'), JSON.stringify(rawResults, null, 2));
-        }
-      } catch (err) {
-        console.log(`[VISION ERROR] ${err.message}`);
-      }
-
-      await page.mouse.wheel(0, 2200);
-      await page.waitForTimeout(CONFIG.SCROLL_WAIT_MS);
-    }
 
     return output({
       type: "ads_library_lookup",
@@ -393,9 +563,9 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT) {
       selected_page_name: selectedPageName || "",
       selected_page_id: selectedPageId || "",
       selected_page_url: selectedPageUrl,
-      total_found: rawResults.length,
-      screenshots,
-      results: rawResults    });
+      total_found: extractedAds.length,
+      results: extractedAds.slice(0, limit)
+    });
   } finally {
     await close();
   }
@@ -403,7 +573,6 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT) {
 
 async function main() {
   cleanupImages();
-  
   const query = process.argv[2];
   const limitArg = process.argv[3];
   const limit = Number(limitArg) > 0 ? Number(limitArg) : CONFIG.DEFAULT_LIMIT;
@@ -415,16 +584,22 @@ async function main() {
   }
 
   try {
-    if (fs.existsSync(path.join(CONFIG.DEBUG_DIR, 'temp_ads.json'))) {
-      fs.unlinkSync(path.join(CONFIG.DEBUG_DIR, 'temp_ads.json'));
+    const tempFile = path.join(CONFIG.DEBUG_DIR, "temp_ads.json");
+    if (fs.existsSync(tempFile)) {
+      fs.unlinkSync(tempFile);
     }
+
     await handleAdsLibraryLookup(query, limit);
   } catch (err) {
+    const tempFile = path.join(CONFIG.DEBUG_DIR, "temp_ads.json");
     let partialResults = [];
-    const tempFile = path.join(CONFIG.DEBUG_DIR, 'temp_ads.json');
+
     if (fs.existsSync(tempFile)) {
-      try { partialResults = JSON.parse(fs.readFileSync(tempFile, 'utf8')); } catch(e){}
+      try {
+        partialResults = JSON.parse(fs.readFileSync(tempFile, "utf8"));
+      } catch (_) {}
     }
+
     output({
       type: "ads_library_lookup",
       query,

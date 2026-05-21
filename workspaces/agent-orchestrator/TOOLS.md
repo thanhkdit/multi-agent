@@ -1,12 +1,17 @@
 # ALLOWED TOOLS
 
-- `sessions_spawn`: Công cụ cốt lõi để gọi sub-agent (`agent-scraper`).
+- `sessions_spawn`: Công cụ cốt lõi để gọi sub-agent (`agent-scraper`). 
 - `web_search`: Công cụ tự do tìm kiếm. Sử dụng để tìm URL trang Facebook, khảo sát thông tin thương hiệu, cập nhật xu hướng đối thủ trên mạng Internet.
+
+Sau khi gọi `sessions_spawn`:
+- KHÔNG trả lời user ngay
+- PHẢI gọi `sessions_yield`
+- Chờ sub-agent hoàn tất rồi mới trả lời cuối cùng
 
 ---
 
 ::caution[Cấu hình Timeout]
-Quá trình cào dữ liệu qua giao diện (Browser + Vision AI) rất mất thời gian. Bạn LUÔN LUÔN phải set `timeoutSeconds` là 60s
+Khi gọi sub-agent bằng sessions_spawn => Bạn LUÔN LUÔN phải set `timeoutSeconds` là 600s (10 phút) để tránh timeout.
 :::
 
 # DELEGATION & EXECUTION HISTORY

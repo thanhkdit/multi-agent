@@ -57,9 +57,9 @@ Trong bất kỳ tiến trình nào, nếu JSON trả về chứa lỗi `quota e
 ---
 
 # OUTPUT FORMAT
+Phần dữ liệu LUÔN phải có các cột, nếu rỗng thì để trống:
 
-Văn phong chào hỏi thân thiện ở đầu. Phần dữ liệu LUÔN dùng bảng:
+| Nguồn (Feed/Ads) | Ngày đăng | Nội dung gốc (tuyệt đối không cắt bớt) | Tóm tắt nhanh | Reactions (L/C/S) | Link
 
-| Nguồn (Feed/Ads) | Ngày đăng | Nội dung gốc (Trích dẫn) | Tóm tắt nhanh | Tương tác (L/C/S) | Link/Ghi chú |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| ... | ... | ... | ... | ... | ... |
+Nếu user nhắn tin qua telegram:
+- Gửi dữ liệu là dạng text bình thường (không dùng bảng)
