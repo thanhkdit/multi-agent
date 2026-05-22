@@ -45,6 +45,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from video_transcript.errors import TranscriptError
@@ -123,22 +124,48 @@ def main() -> int:
 
         try:
             result = run_pipeline(config)
+            
+            # If transcription succeeded but found no speech (empty text)
+            if not result.get("text", "").strip():
+                result["text"] = "Video không có lời nói"
+                
             results.append(result)
+            
         except TranscriptError as e:
-            log(f"[ERROR] {e}")
-            error_out = {
-                "status": "error",
-                "error_type": type(e).__name__,
-                "error_details": str(e),
-                "source": input_val,
-            }
-            results.append(error_out)
-            has_error = True
+            if type(e).__name__ == "NoAudioStreamError":
+                log(f"[INFO] Video {input_val} has no audio stream.")
+                no_audio_result = {
+                    "status": "success",
+                    "text": "Video không có lời nói",
+                    "segments": [],
+                    "source": input_val,
+                    "source_kind": "url" if "http" in input_val else "file",
+                }
+                results.append(no_audio_result)
+            else:
+                log(f"[ERROR] {e}")
+                error_out = {
+                    "status": "error",
+                    "error_type": type(e).__name__,
+                    "error_details": str(e),
+                    "source": input_val,
+                }
+                results.append(error_out)
+                has_error = True
         except KeyboardInterrupt:
             log("[INFO] Interrupted by user.")
             return 130
 
     final_output = results[0] if len(args.inputs) == 1 else results
+
+    # Always save a debug file of the complete results
+    workspace_dir = Path(__file__).resolve().parent.parent
+    debug_dir = workspace_dir / "debug" / "video_transcript"
+    debug_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    debug_file = debug_dir / f"transcript_{timestamp}.json"
+    save_json(final_output, debug_file)
+    log(f"[INFO] Full output saved for debug to: {debug_file}")
 
     if args.output_json:
         save_json(final_output, Path(args.output_json))

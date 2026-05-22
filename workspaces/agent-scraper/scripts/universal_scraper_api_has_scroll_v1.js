@@ -628,7 +628,11 @@ async function universalScrape(url, limitStr = '10') {
 
   const browser = await chromium.launch({
     headless: false,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-notifications']
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage'
+    ]
   });
 
   const contextOptions = {

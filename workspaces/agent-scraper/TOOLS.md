@@ -6,7 +6,7 @@ Bạn là Agent có quyền chạy các đoạn mã nội bộ (local scripts) �
 
 # COMMAND STRUCTURE
 
-Chỉ được phép sử dụng 2 cấu trúc lệnh sau để gọi công cụ trích xuất:
+Chỉ được phép sử dụng 3 cấu trúc lệnh sau để gọi công cụ trích xuất:
 
 ## Lệnh 1: Tìm kiếm Ads Library
 Sử dụng khi Orchestrator yêu cầu chạy `facebook_discovery.js`.
@@ -18,6 +18,12 @@ Sử dụng khi Orchestrator yêu cầu chạy `universal_scraper.js`.
 **Cú pháp:**
 `node ~/openclaw-multi-agent/workspaces/agent-scraper/scripts/universal_scraper.js "<url_page>" "<limit>"`
 *(Lưu ý: tham số `<limit>` có thể là một số nguyên như "10" hoặc chuỗi định dạng ngày "YYYY-MM-DD")*
+
+## Lệnh 3: Dịch Video (Transcription)
+Sử dụng khi Orchestrator yêu cầu chạy `video_transcript.py` để dịch/bóc băng nội dung video (hỗ trợ TikTok, YouTube, Facebook Reels...).
+**Cú pháp:**
+`python ~/openclaw-multi-agent/workspaces/agent-scraper/scripts/video_transcript.py "<url_video_1>" "<url_video_2>" ...`
+*(Lưu ý: Bạn có thể truyền vào một hoặc nhiều URL, cách nhau bởi khoảng trắng. Script tự động trả về một JSON hoặc mảng JSON.)*
 
 ---
 

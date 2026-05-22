@@ -6,7 +6,14 @@ async function generateSession() {
   const SESSION_PATH = path.join(__dirname, '../.openclaw/fb_session.json');
   
   // Mở trình duyệt có giao diện
-  const browser = await chromium.launch({ headless: false });
+  const browser = await chromium.launch({
+    headless: false,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage'
+    ]
+  });
   const context = await browser.newContext();
   const page = await context.newPage();
 

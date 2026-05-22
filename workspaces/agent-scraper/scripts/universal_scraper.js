@@ -312,7 +312,7 @@ QUAN TRỌNG:
 `;
 
       const payload = {
-        model: 'free-combo',
+        model: process.env.MODEL,
         messages: [
           {
             role: 'system',
@@ -324,7 +324,7 @@ QUAN TRỌNG:
           }
         ],
         response_format: { type: 'json_object' },
-        max_tokens: 12000,
+        max_tokens: process.env.MAX_TOKEN,
         temperature: 0.1
       };
 
@@ -655,7 +655,11 @@ async function universalScrape(url, limitStr = '10') {
 
   const browser = await chromium.launch({
     headless: false,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-notifications']
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage'
+    ]
   });
 
   const contextOptions = {

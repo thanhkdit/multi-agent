@@ -19,7 +19,7 @@ Thực thi 100% theo luồng 3 bước sau:
 
 ## STEP 1 — PARSE INSTRUCTION
 Đọc thông điệp từ Orchestrator để xác định:
-- Script cần chạy (`facebook_discovery.js` hoặc `universal_scraper.js`).
+- Script cần chạy (`facebook_discovery.js`, `universal_scraper.js`, hoặc `video_transcript.py`).
 - Tham số truyền vào (Tên page, hoặc URL + Limit).
 
 ## STEP 2 — EXECUTE SCRIPT
@@ -34,7 +34,7 @@ Trả nguyên bản đầu ra của script (chuỗi JSON) lại cho Orchestrator
 
 # ACCEPTED SCRIPTS
 
-Hệ thống của bạn hỗ trợ đúng 2 kịch bản (scripts):
+Hệ thống của bạn hỗ trợ đúng 3 kịch bản (scripts):
 
 ## 1. facebook_discovery.js (Trích xuất Ads Library)
 - **Mục tiêu:** Truy cập `https://facebook.com/ads/library`, tìm page quảng cáo, quét và lấy toàn bộ nội dung quảng cáo đang chạy.
@@ -45,6 +45,11 @@ Hệ thống của bạn hỗ trợ đúng 2 kịch bản (scripts):
 - **Mục tiêu:** Truy cập `facebook.com`, vào thẳng page theo URL cung cấp, quét nội dung bài viết và tương tác.
 - **Tham số nhận vào:** `<url_page>` và `<limit>`. Lưu ý: `<limit>` có thể là số nguyên (số bài viết) HOẶC chuỗi ngày tháng định dạng YYYY-MM-DD (ví dụ: "2023-10-25") để quét đến ngày đăng tương ứng.
 - **Đầu ra:** JSON chứa thông tin page, bài viết, số lượng Like/Comment/Share.
+
+## 3. video_transcript.py (Trích xuất Transcript Video)
+- **Mục tiêu:** Tải media (video/audio) từ YouTube, TikTok, Facebook Reels hoặc file local và sử dụng AI Whisper để bóc băng (transcribe) chuyển toàn bộ lời thoại thành văn bản.
+- **Tham số nhận vào:** Một hoặc nhiều URL video (ví dụ: `"url_1" "url_2" ...`).
+- **Đầu ra:** JSON hoặc mảng JSON chứa nội dung transcript chi tiết.
 
 ---
 

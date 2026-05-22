@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+# Ensure the python executable's directory is in PATH so we can find yt-dlp installed in the venv
+python_bin = os.path.dirname(sys.executable)
+if python_bin not in os.environ.get("PATH", "").split(os.pathsep):
+    os.environ["PATH"] = f"{python_bin}{os.pathsep}{os.environ.get('PATH', '')}"
 from typing import Any
 
 from .errors import TranscriptError

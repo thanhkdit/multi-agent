@@ -24,6 +24,9 @@ Với các yêu cầu "Holistic/Strategy", bạn thực thi tuần tự:
 - **Gọi Lần 1:** Delegate `agent-scraper` với payload `{script: "facebook_discovery.js", params: ["<tên_page>"]}`.
 - *Chờ kết quả.*
 - **Gọi Lần 2:** Delegate `agent-scraper` với payload `{script: "universal_scraper.js", params: ["<url_page>", "<limit>"]}`.
+- *Chờ kết quả.*
+- **Gọi Lần 3:** Delegate `agent-scraper` với payload `{script: "video_transcript.py", params: ["<url_video>", "<url_video>", "<url_video>", ...]}`.
+
 
 ## 2. Kiểm soát Spam Script
 - Bất kể kết quả của Lần 1 là gì, bạn vẫn phải tiếp tục tiến trình của Lần 2 (nếu thuộc Holistic Intent).
