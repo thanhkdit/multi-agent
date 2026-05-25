@@ -7,7 +7,7 @@ async function generateSession() {
   
   // Mở trình duyệt có giao diện
   const browser = await chromium.launch({
-    headless: false,
+    headless: process.env.ENV === 'local' ? false : true,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',

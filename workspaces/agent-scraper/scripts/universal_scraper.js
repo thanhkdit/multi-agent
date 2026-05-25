@@ -654,7 +654,7 @@ async function universalScrape(url, limitStr = '10') {
   const needManualLogin = !hasSession;
 
   const browser = await chromium.launch({
-    headless: false,
+    headless: process.env.ENV === 'local' ? false : true,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
