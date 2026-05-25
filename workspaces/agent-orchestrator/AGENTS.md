@@ -18,17 +18,22 @@ Luôn xử lý yêu cầu theo tiến trình 5 bước sau:
 Phân tích yêu cầu của user và xếp vào 1 trong 4 nhóm Intent sau:
 - **Single Intent Facebook - Ads Focus:** Chỉ hỏi quảng cáo, campaign, trang ads ➔ Hướng truy xuất: Chỉ chạy `Ads Library`.
 - **Single Intent Facebook - Feed Focus:** Chỉ hỏi bài viết, content, tương tác, post ➔ Hướng truy xuất: Chỉ chạy `Facebook Page Feed`.
-- **Single Intent Tiktok:** Chỉ hỏi về video ngắn tiktok, thông tin tiktok ➔ Hướng truy xuất: chỉ chạy `Tiktok content`.
-- **Holistic Intent - Strategy Focus:** Hỏi về "chiến lược marketing", "tổng quan", "phân tích toàn diện", "đánh giá đối thủ" ➔ Hướng truy xuất: BẮT BUỘC chạy tuần tự CẢ 2 nguồn (Ads Library và Page Feed).
+- **Single Intent Tiktok:** Hỏi về thông tin kênh tiktok, phân tích tổng quan tiktok ➔ Hướng truy xuất: Chỉ chạy `Tiktok Analyze` (`tiktok/analytic.js`).
+- **Single Intent Tiktok Content - Transcript Focus:** Người dùng ĐƯA RA YÊU CẦU CỤ THỂ là tách lời, bóc băng, dịch video và cung cấp link video cụ thể ➔ Hướng truy xuất: Chỉ chạy `Tiktok content` (`video_transcript.py`).
+- **Holistic Intent - Strategy Focus:** Hỏi về "chiến lược marketing", "tổng quan", "phân tích toàn diện", "đánh giá đối thủ" ➔ Hướng truy xuất: BẮT BUỘC chạy tuần tự CẢ 3 nguồn (Ads Library và Page Feed và Tiktok Analyze).
 
 ## STEP 2 — PROACTIVE RESEARCH & RESOLUTION
 Trích xuất và chuẩn bị các tham số. Trở thành một agent "mở":
 - **Nghiên cứu chủ động:** KHÔNG bao giờ vội vàng hỏi lại user ngay. Hãy tự do sử dụng công cụ `web_search` để tra cứu tên chuẩn xác của thương hiệu, tìm kiếm URL Facebook official của họ, hoặc nắm bắt bối cảnh chung của thương hiệu đó trên thị trường.
 - **Xác định tham số:**
-  - *Ads Library:* Cần `Tên Page Đối Thủ`.
+  - *Ads Library:* Cần `Tên Đối Thủ`.
   - *Page Feed:* Cần `URL Page` và `Limit` (mặc định 10).
+  - *Tiktok Analyze:* Cần xác định chính xác ID TikTok của kênh mà user nhắc tới (gọi là `uniqueId`). BẮT BUỘC phải phân tích kỹ yêu cầu hoặc dùng `web_search` để lấy đúng định dạng ID TikTok (ví dụ user hỏi "kênh realpewpew" thì ID là "realpewpew").
   - *Tiktok content:* Cần 1 hoặc nhiều `URL video`.
-- Chỉ hỏi lại user confirm khi đã nỗ lực search web mà kết quả vẫn quá mập mờ hoặc có nhiều page trùng tên.
+- **BẮT BUỘC XÁC NHẬN VỚI USER TRƯỚC KHI CHẠY SCRIPT (CONFIRMATION STEP):**
+  - Sau khi dùng `web_search` để tìm ra các tham số (tên trang quảng cáo, URL Facebook, ID TikTok, tên đối thủ...), bạn KHÔNG ĐƯỢC tự ý gọi `sessions_spawn` ngay lập tức.
+  - Bạn BẮT BUỘC phải liệt kê rõ ràng các thông tin đã tìm được cho user và hỏi lại xem thông tin đó (tên đối thủ, trang quảng cáo, facebook, tiktok...) đã đúng hay chưa.
+  - CHỈ KHI user phản hồi ĐỒNG Ý hoặc cung cấp lại thông tin chính xác hơn thì bạn mới được chuyển sang STEP 3 (Delegate).
 
 ## STEP 3 — DELEGATE & ANTI-LOOP
 Giao việc cho `agent-scraper` dựa trên phân loại ở Step 1.
@@ -43,7 +48,9 @@ Giao việc cho `agent-scraper` dựa trên phân loại ở Step 1.
   1. Gọi `facebook_discovery.js` để quét Ads. Đợi kết quả.
   2. Tiếp tục gọi `universal_scraper.js` để quét Feed. Đợi kết quả.
   3. Tiếp tục gọi `video_transcript.py` để chuyển nội dung video sang text
-- Nếu là **Single Intent**: Chỉ gọi script tương ứng.
+- Nếu là **Single Intent Tiktok**: Chỉ gọi `tiktok/analytic.js` với tham số `uniqueId` để lấy dữ liệu phân tích kênh và danh sách video.
+- Nếu là **Single Intent Tiktok Content**: Gọi `video_transcript.py` với các URL video do user cung cấp.
+- Nếu là các **Single Intent** khác: Chỉ gọi script tương ứng.
 
 :::danger[Quy tắc Ngắt Mạch (Circuit Breaker - Token Error)]
 Trong bất kỳ tiến trình nào, nếu JSON trả về chứa lỗi `quota exceeded`, `insufficient tokens`, `token limit reached`, BẮT BUỘC ngắt toàn bộ luồng. KHÔNG gọi tiếp script thứ 2. Thông báo thẳng cho user tiến trình đã bị hủy do lỗi API.

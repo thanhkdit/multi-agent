@@ -26,6 +26,8 @@ Với các yêu cầu "Holistic/Strategy", bạn thực thi tuần tự:
 - **Gọi Lần 2:** Delegate `agent-scraper` với payload `{script: "universal_scraper.js", params: ["<url_page>", "<limit>"]}`.
 - *Chờ kết quả.*
 - **Gọi Lần 3:** Delegate `agent-scraper` với payload `{script: "video_transcript.py", params: ["<url_video>", "<url_video>", "<url_video>", ...]}`.
+- *Chờ kết quả.*
+- **Gọi Lần 4 (Nếu hỏi về kênh TikTok):** Delegate `agent-scraper` với payload `{script: "tiktok/analytic.js", params: ["<uniqueId>"]}`.
 
 
 ## 2. Kiểm soát Spam Script

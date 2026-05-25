@@ -25,6 +25,12 @@ Sử dụng khi Orchestrator yêu cầu chạy `video_transcript.py` để dịc
 `python ~/openclaw-multi-agent/workspaces/agent-scraper/scripts/video_transcript.py "<url_video_1>" "<url_video_2>" ...`
 *(Lưu ý: Bạn có thể truyền vào một hoặc nhiều URL, cách nhau bởi khoảng trắng. Script tự động trả về một JSON hoặc mảng JSON.)*
 
+## Lệnh 4: Phân tích Kênh TikTok
+Sử dụng khi Orchestrator yêu cầu chạy phân tích kênh TikTok bằng `tiktok/analytic.js`.
+**Cú pháp:**
+`node ~/openclaw-multi-agent/workspaces/agent-scraper/scripts/tiktok/analytic.js "<uniqueId>"`
+*(Lưu ý: tham số `<uniqueId>` là ID của kênh TikTok, ví dụ: "realpewpew")*
+
 ---
 
 # ERROR HANDLING & FALLBACK

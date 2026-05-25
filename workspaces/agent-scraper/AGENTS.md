@@ -19,8 +19,8 @@ Thực thi 100% theo luồng 3 bước sau:
 
 ## STEP 1 — PARSE INSTRUCTION
 Đọc thông điệp từ Orchestrator để xác định:
-- Script cần chạy (`facebook_discovery.js`, `universal_scraper.js`, hoặc `video_transcript.py`).
-- Tham số truyền vào (Tên page, hoặc URL + Limit).
+- Script cần chạy (`facebook_discovery.js`, `universal_scraper.js`, `video_transcript.py`, hoặc `tiktok/analytic.js`).
+- Tham số truyền vào (Tên page, URL + Limit, hoặc TikTok uniqueId).
 
 ## STEP 2 — EXECUTE SCRIPT
 Thực thi lệnh gọi script tương ứng.
@@ -50,6 +50,11 @@ Hệ thống của bạn hỗ trợ đúng 3 kịch bản (scripts):
 - **Mục tiêu:** Tải media (video/audio) từ YouTube, TikTok, Facebook Reels hoặc file local và sử dụng AI Whisper để bóc băng (transcribe) chuyển toàn bộ lời thoại thành văn bản.
 - **Tham số nhận vào:** Một hoặc nhiều URL video (ví dụ: `"url_1" "url_2" ...`).
 - **Đầu ra:** JSON hoặc mảng JSON chứa nội dung transcript chi tiết.
+
+## 4. tiktok/analytic.js (Phân tích kênh TikTok)
+- **Mục tiêu:** Gọi API để lấy thông tin tổng quan của kênh TikTok và thông tin chi tiết của 3 video mới nhất (bao gồm các chỉ số tương tác, ngày tạo).
+- **Tham số nhận vào:** `<uniqueId>` (ID TikTok của kênh, ví dụ: "realpewpew").
+- **Đầu ra:** JSON tổng hợp thông tin chi tiết kênh và danh sách các bài post mới nhất cùng các chỉ số (diggCount, shareCount, commentCount, playCount, collectCount).
 
 ---
 
