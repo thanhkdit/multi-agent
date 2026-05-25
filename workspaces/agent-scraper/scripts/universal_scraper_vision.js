@@ -1067,6 +1067,13 @@ Chỉ trả về JSON, không kèm giải thích.`;
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
       await sleep(3000);
 
+      // Check if session is expired
+      const currentUrl = page.url();
+      const loginFormExists = await page.$('form[id="login_form"]') !== null;
+      if (currentUrl.includes('/login') || loginFormExists) {
+        throw new Error("Phiên đăng nhập (Session) đã hết hạn. Vui lòng báo admin đăng nhập lại Facebook.");
+      }
+
       const pageInfo = await this.extractPageInfo(page);
 
       console.log("[DOM] Warmup scroll để Facebook render feed...");
@@ -1107,12 +1114,31 @@ async function universalScrape(url, limitStr = '10') {
 
   const platform = detectPlatform(url);
   const sessionPath = path.join(CONFIG.SESSION_DIR, 'fb_session.json');
-  
-  const hasSession = fs.existsSync(sessionPath);
+  let hasSession = fs.existsSync(sessionPath);
+  let needManualLogin = !hasSession;
 
-  // LOGIC ĐÓNG MỞ GIAO DIỆN:
-  // Nếu chưa có file session -> Bật giao diện (false) để tương tác
-  const needManualLogin = !hasSession;
+  if (hasSession) {
+    try {
+      const sessionData = JSON.parse(require('fs').readFileSync(sessionPath, 'utf8'));
+      const cUserCookie = sessionData.cookies?.find(c => c.name === 'c_user');
+      if (!cUserCookie || (cUserCookie.expires && cUserCookie.expires < Date.now() / 1000)) {
+        needManualLogin = true;
+        hasSession = false;
+      }
+    } catch (e) {
+      needManualLogin = true;
+      hasSession = false;
+    }
+  }
+
+  if (needManualLogin && process.env.ENV !== 'local') {
+    console.log(JSON.stringify({
+      status: 'error',
+      error_details: 'Phiên đăng nhập (Session) đã hết hạn. Vui lòng báo admin đăng nhập lại Facebook.'
+    }));
+    process.exit(0);
+  }
+
   const isHeadless = !needManualLogin;
 
   const browser = await chromium.launch({

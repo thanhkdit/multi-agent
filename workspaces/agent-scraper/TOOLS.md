@@ -17,7 +17,7 @@ Sử dụng khi Orchestrator yêu cầu chạy `facebook_discovery.js`.
 Sử dụng khi Orchestrator yêu cầu chạy `universal_scraper.js`.
 **Cú pháp:**
 `node ~/openclaw-multi-agent/workspaces/agent-scraper/scripts/universal_scraper.js "<url_page>" "<limit>"`
-*(Lưu ý: tham số `<limit>` có thể là một số nguyên như "10" hoặc chuỗi định dạng ngày "YYYY-MM-DD")*
+*(Lưu ý: tham số `<limit>` có thể là một số nguyên như "6" hoặc chuỗi định dạng ngày "YYYY-MM-DD")*
 
 ## Lệnh 3: Dịch Video (Transcription)
 Sử dụng khi Orchestrator yêu cầu chạy `video_transcript.py` để dịch/bóc băng nội dung video (hỗ trợ TikTok, YouTube, Facebook Reels...).

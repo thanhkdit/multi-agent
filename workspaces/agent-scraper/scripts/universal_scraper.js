@@ -242,7 +242,7 @@ class AIHelper {
     }
 
     const sanitizedData = cleanFacebookData(jsonData);
-    const MAX_CHUNK_SIZE = 150000;
+    const MAX_CHUNK_SIZE = 180000;
 
     const sourceArray = Array.isArray(sanitizedData)
       ? sanitizedData
@@ -531,13 +531,13 @@ class FacebookScraper {
     return task;
   }
 
-  async scrape(url, limitStr = '10', needManualLogin = false) {
+  async scrape(url, limitStr = '6', needManualLogin = false) {
     const page = await this.context.newPage();
     const ai = new AIHelper();
 
     const normalizedLimit = String(limitStr).trim();
     const isDateLimit = /^\d{4}-\d{2}-\d{2}$/.test(normalizedLimit);
-    const limitCount = isDateLimit ? Infinity : Math.max(parseInt(normalizedLimit, 10) || 10, 1);
+    const limitCount = isDateLimit ? Infinity : Math.max(parseInt(normalizedLimit, 10) || 6, 1);
     const limitDate = isDateLimit ? new Date(normalizedLimit) : null;
     const limitDateUnix = isDateLimit && !Number.isNaN(limitDate.getTime()) ? Math.floor(limitDate.getTime() / 1000) : 0;
 
@@ -554,6 +554,13 @@ class FacebookScraper {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
       await sleep(3000);
 
+      // Check if session is expired
+      const currentUrl = page.url();
+      const loginFormExists = await page.$('form[id="login_form"]') !== null;
+      if (currentUrl.includes('/login') || loginFormExists) {
+        throw new Error("Phiên đăng nhập (Session) đã hết hạn. Vui lòng báo admin đăng nhập lại Facebook.");
+      }
+
       const pageInfo = await this.extractPageInfo(page);
 
       // console.log(`[DOM] Bắt đầu cuộn trang để kích hoạt API load bài... (Mục tiêu: ${limitStr})`);
@@ -561,8 +568,8 @@ class FacebookScraper {
 
       let scrollAttempts = 0;
       let submittedGraphqlCount = 0;
-      const estimatedGraphqlTarget = isDateLimit ? 200 : Math.max(Math.ceil(limitCount / 3) + 2, 3);
-      const maxScrolls = isDateLimit ? 200 : Math.max(estimatedGraphqlTarget * 3, 30);
+      const estimatedGraphqlTarget = isDateLimit ? 200 : Math.ceil(limitCount / 3) + 1;
+      const maxScrolls = isDateLimit ? 200 : estimatedGraphqlTarget * 2 + 5;
 
       while (scrollAttempts < maxScrolls) {
         if (!isDateLimit && submittedGraphqlCount >= estimatedGraphqlTarget) {
@@ -579,6 +586,8 @@ class FacebookScraper {
         }
 
         for (let i = 0; i < batches.length; i++) {
+          if (!isDateLimit && submittedGraphqlCount >= estimatedGraphqlTarget) break;
+
           const batch = batches[i];
           const batchData = batch.objects || [];
 
@@ -646,12 +655,34 @@ class FacebookScraper {
   }
 }
 
-async function universalScrape(url, limitStr = '10') {
+async function universalScrape(url, limitStr = '6') {
   detectPlatform(url);
 
   const sessionPath = path.join(CONFIG.SESSION_DIR, 'fb_session.json');
-  const hasSession = fs.existsSync(sessionPath);
-  const needManualLogin = !hasSession;
+  let hasSession = fs.existsSync(sessionPath);
+  let needManualLogin = !hasSession;
+
+  if (hasSession) {
+    try {
+      const sessionData = JSON.parse(require('fs').readFileSync(sessionPath, 'utf8'));
+      const cUserCookie = sessionData.cookies?.find(c => c.name === 'c_user');
+      if (!cUserCookie || (cUserCookie.expires && cUserCookie.expires < Date.now() / 1000)) {
+        needManualLogin = true;
+        hasSession = false;
+      }
+    } catch (e) {
+      needManualLogin = true;
+      hasSession = false;
+    }
+  }
+
+  if (needManualLogin) {
+    console.log(JSON.stringify({
+      status: 'error',
+      error_details: 'Phiên đăng nhập (Session) đã hết hạn. Vui lòng báo admin đăng nhập lại Facebook.'
+    }));
+    process.exit(0);
+  }
 
   const browser = await chromium.launch({
     headless: process.env.ENV === 'local' ? false : true,
@@ -676,6 +707,7 @@ async function universalScrape(url, limitStr = '10') {
   try {
     const scraper = new FacebookScraper(context);
     const result = await scraper.scrape(url, limitStr, needManualLogin);
+    console.log(JSON.stringify(result, null, 2));
   } catch (err) {
     logError(err.message);
     let partialPosts = [];
@@ -691,7 +723,7 @@ async function universalScrape(url, limitStr = '10') {
 }
 
 const targetUrl = process.argv[2];
-const targetLimit = process.argv[3] || '10';
+const targetLimit = process.argv[3] || '6';
 
 if (!targetUrl) {
   // console.log(JSON.stringify({ status: 'error', error: 'Missing URL' }));

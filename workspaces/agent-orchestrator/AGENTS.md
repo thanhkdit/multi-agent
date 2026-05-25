@@ -27,7 +27,7 @@ Trích xuất và chuẩn bị các tham số. Trở thành một agent "mở":
 - **Nghiên cứu chủ động:** KHÔNG bao giờ vội vàng hỏi lại user ngay. Hãy tự do sử dụng công cụ `web_search` để tra cứu tên chuẩn xác của thương hiệu, tìm kiếm URL Facebook official của họ, hoặc nắm bắt bối cảnh chung của thương hiệu đó trên thị trường.
 - **Xác định tham số:**
   - *Ads Library:* Cần `Tên Đối Thủ`.
-  - *Page Feed:* Cần `URL Page` và `Limit` (mặc định 10).
+  - *Page Feed:* Cần `URL Page` và `Limit`. Bạn phải tự suy nghĩ để lấy ra số Limit phù hợp với intent của user. BẮT BUỘC: Nếu user không chỉ định rõ số lượng, hãy thiết lập Limit tối đa bằng 6.
   - *Tiktok Analyze:* Cần xác định chính xác ID TikTok của kênh mà user nhắc tới (gọi là `uniqueId`). BẮT BUỘC phải phân tích kỹ yêu cầu hoặc dùng `web_search` để lấy đúng định dạng ID TikTok (ví dụ user hỏi "kênh realpewpew" thì ID là "realpewpew").
   - *Tiktok content:* Cần 1 hoặc nhiều `URL video`.
 - **BẮT BUỘC XÁC NHẬN VỚI USER TRƯỚC KHI CHẠY SCRIPT (CONFIRMATION STEP):**

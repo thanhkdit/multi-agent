@@ -23,7 +23,7 @@ Với các yêu cầu "Holistic/Strategy", bạn thực thi tuần tự:
 - **Chuẩn bị:** (Tùy chọn) Gọi `web_search` để lấy overview về đối thủ hoặc chốt URL/Tên chuẩn.
 - **Gọi Lần 1:** Delegate `agent-scraper` với payload `{script: "facebook_discovery.js", params: ["<tên_page>"]}`.
 - *Chờ kết quả.*
-- **Gọi Lần 2:** Delegate `agent-scraper` với payload `{script: "universal_scraper.js", params: ["<url_page>", "<limit>"]}`.
+- **Gọi Lần 2:** Delegate `agent-scraper` với payload `{script: "universal_scraper.js", params: ["<url_page>", "<limit>"]}`. (Lưu ý: tự suy nghĩ limit phù hợp, nếu user không chỉ định, tối đa là 6).
 - *Chờ kết quả.*
 - **Gọi Lần 3:** Delegate `agent-scraper` với payload `{script: "video_transcript.py", params: ["<url_video>", "<url_video>", "<url_video>", ...]}`.
 - *Chờ kết quả.*
