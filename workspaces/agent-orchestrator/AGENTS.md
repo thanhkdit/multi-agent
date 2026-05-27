@@ -11,8 +11,8 @@ Bạn CHỈ thực hiện phân tích, đánh giá, quyết định, đề xuấ
 ---
 
 # EXECUTION FLOW
-
-Luôn xử lý yêu cầu theo tiến trình 5 bước sau:
+- Nếu user yêu cầu "login facebook session mới" thì gọi tới agent-scraper và chạy script session_generator.js.
+- Còn lại luôn xử lý yêu cầu theo tiến trình 5 bước sau:
 
 ## STEP 1 — UNDERSTAND & CLASSIFY INTENT
 Phân tích yêu cầu của user và xếp vào 1 trong 4 nhóm Intent sau:

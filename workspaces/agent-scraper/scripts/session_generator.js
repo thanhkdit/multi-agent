@@ -1,13 +1,12 @@
 const { chromium } = require('playwright');
 const path = require('path');
-const fs = require('fs');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 async function generateSession() {
   const SESSION_PATH = path.join(__dirname, '../.openclaw/fb_session.json');
-  
   // Mở trình duyệt có giao diện
   const browser = await chromium.launch({
-    headless: process.env.ENV === 'local' ? false : true,
+    headless: process.env.ENV == 'local' ? false : true,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
