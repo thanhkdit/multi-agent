@@ -43,39 +43,30 @@ npm run session:check
 
 ### Login Facebook lần đầu (hoặc khi session hết hạn)
 
-**Trên máy local (có GUI):**
-```bash
-ENV=local node scripts/session_generator.js
-```
-
 **Trên Ubuntu server (headless):**
 
-1. Cài đặt dependencies cho remote login:
+1. Không cần cài đặt VNC. Chỉ cần đảm bảo server có `xvfb`:
 ```bash
-sudo apt-get install -y xvfb x11vnc
-# (Tuỳ chọn) Để dùng web browser thay VNC client:
-sudo apt-get install -y novnc websockify
+sudo apt-get install -y xvfb
 ```
 
-2. Chạy session generator:
+2. Chạy session generator (hoặc scraper tự động gọi):
 ```bash
 node scripts/session_generator.js
 # hoặc
 npm run session:login
 ```
 
-3. Script sẽ tự khởi động:
-   - **Xvfb**: Virtual display cho Chromium
-   - **x11vnc**: VNC server để bạn kết nối từ xa
-   - **noVNC** (nếu có): Web-based VNC client
+3. Script sẽ tự mở browser headful trong Xvfb và cấp quyền truy cập từ xa qua Chrome DevTools Protocol (CDP).
 
-4. Kết nối vào browser:
-   - **VNC Client**: `vnc://<server_ip>:5900`
-   - **Web Browser**: `http://<server_ip>:6080/vnc.html`
+4. Terminal sẽ in ra một đường link dạng `http://<server_ip>:9222`.
 
-5. Login Facebook thủ công trên browser, giải CAPTCHA nếu có
+5. Copy link này, mở bằng trình duyệt (ưu tiên Chrome/Edge) trên máy tính của bạn:
+   - Click vào liên kết trang Facebook.
+   - Một màn hình giống Developer Tools sẽ hiện ra cho phép bạn tương tác.
+   - Đăng nhập Facebook và giải CAPTCHA (nếu có).
 
-6. Script tự phát hiện login thành công và lưu session
+6. Script sẽ tự phát hiện khi login thành công và tiếp tục công việc.
 
 ### Renew session khi hết hạn
 
@@ -85,12 +76,11 @@ node scripts/session_generator.js --force
 npm run session:renew
 ```
 
-### Cấu hình VNC ports (tuỳ chọn)
+### Cấu hình CDP port (tuỳ chọn)
 
-Thêm vào `.env` nếu muốn đổi port:
+Thêm vào `.env` nếu muốn đổi port hoặc display:
 ```
-VNC_PORT=5900
-NOVNC_PORT=6080
+CDP_PORT=9222
 DISPLAY_NUM=99
 LOGIN_TIMEOUT_MS=600000
 ```
@@ -190,22 +180,19 @@ node scripts/session_generator.js --force
 
 ### Không thể mở browser trên server
 ```bash
-# Cài Xvfb + VNC
-sudo apt-get install -y xvfb x11vnc
+# Cài Xvfb (nếu chưa có)
+sudo apt-get install -y xvfb
 
 # Kiểm tra Xvfb
 which Xvfb
-
-# Kiểm tra x11vnc
-which x11vnc
 ```
 
 ### Scraper báo "Session đã hết hạn"
-Khi scraper trả về lỗi session, chạy:
+Scraper sẽ tự động mở browser trên server và cấp link (CDP) cho bạn login.
+Tuy nhiên, nếu bạn muốn renew thủ công trước khi chạy scraper:
 ```bash
 node scripts/session_generator.js --force
 ```
-Sau đó chạy lại lệnh scrape.
 
 ### Debug logs
 - Session log: `debug/session.log`

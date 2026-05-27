@@ -627,18 +627,33 @@ class FacebookScraper {
 async function universalScrape(url, limitStr = '10') {
   detectPlatform(url);
 
-  const status = sessionManager.checkSessionStatus();
-  const sessionPath = sessionManager.getValidSessionPath();
-  const hasSession = status.status === 'valid';
-  let needManualLogin = !hasSession;
+  let status = sessionManager.checkSessionStatus();
+  let sessionPath = sessionManager.getValidSessionPath();
 
-  if (needManualLogin && process.env.ENV !== 'local') {
-    sessionManager.logSession('error', `Session không hợp lệ: ${status.detail}`);
-    console.log(JSON.stringify({
-      status: 'error',
-      error_details: 'Phiên đăng nhập (Session) đã hết hạn. Vui lòng báo admin đăng nhập lại Facebook bằng: node scripts/session_generator.js --force'
-    }));
-    process.exit(0);
+  if (status.status !== 'valid') {
+    sessionManager.logSession('warn', `Session không hợp lệ: ${status.detail}`);
+    sessionManager.logSession('info', 'Khởi động remote login flow...');
+
+    const loginResult = await sessionManager.startRemoteLoginSession({ force: true });
+
+    if (!loginResult.success) {
+      console.log(JSON.stringify({
+        status: 'error',
+        error_details: 'Không thể login Facebook. Chạy thủ công: node scripts/session_generator.js --force'
+      }));
+      process.exit(0);
+    }
+
+    status = sessionManager.checkSessionStatus();
+    sessionPath = sessionManager.getValidSessionPath();
+
+    if (!sessionPath) {
+      console.log(JSON.stringify({
+        status: 'error',
+        error_details: 'Session vẫn không hợp lệ sau khi login. Thử lại: node scripts/session_generator.js --force'
+      }));
+      process.exit(0);
+    }
   }
 
   const browser = await chromium.launch({
@@ -655,7 +670,7 @@ async function universalScrape(url, limitStr = '10') {
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36'
   };
 
-  if (hasSession) {
+  if (sessionPath) {
     contextOptions.storageState = sessionPath;
   }
 
@@ -663,7 +678,7 @@ async function universalScrape(url, limitStr = '10') {
 
   try {
     const scraper = new FacebookScraper(context);
-    const result = await scraper.scrape(url, limitStr, needManualLogin);
+    const result = await scraper.scrape(url, limitStr, false);
     console.log(JSON.stringify(result));
   } catch (err) {
     logError(err.message);

@@ -651,17 +651,35 @@ class FacebookScraper {
 async function universalScrape(url, limitStr = '6') {
   detectPlatform(url);
 
-  const status = sessionManager.checkSessionStatus();
-  const sessionPath = sessionManager.getValidSessionPath();
-  const hasSession = status.status === 'valid';
+  let status = sessionManager.checkSessionStatus();
+  let sessionPath = sessionManager.getValidSessionPath();
 
-  if (!hasSession) {
-    sessionManager.logSession('error', `Session không hợp lệ: ${status.detail}`);
-    console.log(JSON.stringify({
-      status: 'error',
-      error_details: 'Phiên đăng nhập (Session) đã hết hạn. Vui lòng báo admin đăng nhập lại Facebook bằng: node scripts/session_generator.js --force'
-    }));
-    process.exit(0);
+  // Session hết hạn → tự động mở browser trên server để admin login từ xa
+  if (status.status !== 'valid') {
+    sessionManager.logSession('warn', `Session không hợp lệ: ${status.detail}`);
+    sessionManager.logSession('info', 'Khởi động remote login flow...');
+
+    const loginResult = await sessionManager.startRemoteLoginSession({ force: true });
+
+    if (!loginResult.success) {
+      console.log(JSON.stringify({
+        status: 'error',
+        error_details: 'Không thể login Facebook. Chạy thủ công: node scripts/session_generator.js --force'
+      }));
+      process.exit(0);
+    }
+
+    // Reload session sau khi login
+    status = sessionManager.checkSessionStatus();
+    sessionPath = sessionManager.getValidSessionPath();
+
+    if (!sessionPath) {
+      console.log(JSON.stringify({
+        status: 'error',
+        error_details: 'Session vẫn không hợp lệ sau khi login. Thử lại: node scripts/session_generator.js --force'
+      }));
+      process.exit(0);
+    }
   }
 
   const browser = await chromium.launch({
@@ -683,7 +701,7 @@ async function universalScrape(url, limitStr = '6') {
 
   try {
     const scraper = new FacebookScraper(context);
-    const result = await scraper.scrape(url, limitStr, true);
+    const result = await scraper.scrape(url, limitStr, false);
     console.log(JSON.stringify(result, null, 2));
   } catch (err) {
     logError(err.message);

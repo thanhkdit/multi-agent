@@ -7,6 +7,7 @@
  * - Kiểm tra trạng thái session (valid / expired / missing)
  * - Nạp session từ file storageState JSON
  * - Lưu session sau khi login thành công
+ * - Khởi tạo browser headful trên server (Xvfb + CDP remote debug)
  * - Ghi log vào debug/ khi session thay đổi trạng thái
  * 
  * Session được lưu ở 2 nơi (đồng bộ):
@@ -16,6 +17,8 @@
 
 const fs = require('fs');
 const path = require('path');
+const { chromium } = require('playwright');
+const { execSync, spawn } = require('child_process');
 
 // ── Paths ────────────────────────────────────────────────────────────
 const WORKSPACE_ROOT = path.resolve(__dirname, '..');
@@ -24,6 +27,11 @@ const SESSION_FILE = path.join(SESSION_DIR, 'fb_session.json');
 const BROWSER_DATA_DIR = path.join(WORKSPACE_ROOT, 'browser-data');
 const DEBUG_DIR = path.join(WORKSPACE_ROOT, 'debug');
 const SESSION_LOG = path.join(DEBUG_DIR, 'session.log');
+
+// ── Config ───────────────────────────────────────────────────────────
+const DISPLAY_NUM = process.env.DISPLAY_NUM || '99';
+const LOGIN_TIMEOUT_MS = parseInt(process.env.LOGIN_TIMEOUT_MS) || 600000; // 10 phút
+const CDP_PORT = parseInt(process.env.CDP_PORT) || 9222;
 
 // Đảm bảo các thư mục tồn tại
 function ensureDirs() {
@@ -39,14 +47,12 @@ function logSession(level, message) {
   const prefix = { info: 'ℹ️', warn: '⚠️', error: '❌', success: '✅' }[level] || '📝';
   const line = `[${timestamp}] [${level.toUpperCase()}] ${prefix} ${message}`;
 
-  // Console
   if (level === 'error') {
     console.error(line);
   } else {
     console.log(line);
   }
 
-  // File log
   try {
     ensureDirs();
     fs.appendFileSync(SESSION_LOG, line + '\n');
@@ -57,111 +63,71 @@ function logSession(level, message) {
 
 /**
  * Kiểm tra trạng thái session Facebook.
- * 
  * @returns {{ status: 'valid'|'expired'|'missing'|'corrupted', detail: string, cUser?: string, expiresAt?: string }}
  */
 function checkSessionStatus() {
   ensureDirs();
 
   if (!fs.existsSync(SESSION_FILE)) {
-    logSession('warn', 'Session file not found: ' + SESSION_FILE);
     return { status: 'missing', detail: 'File fb_session.json không tồn tại.' };
   }
 
   let sessionData;
   try {
-    const raw = fs.readFileSync(SESSION_FILE, 'utf8');
-    sessionData = JSON.parse(raw);
+    sessionData = JSON.parse(fs.readFileSync(SESSION_FILE, 'utf8'));
   } catch (e) {
-    logSession('error', 'Session file corrupted: ' + e.message);
     return { status: 'corrupted', detail: 'File fb_session.json bị lỗi JSON: ' + e.message };
   }
 
-  // Validate cấu trúc storageState
   if (!sessionData.cookies || !Array.isArray(sessionData.cookies)) {
-    logSession('error', 'Session file missing cookies array.');
     return { status: 'corrupted', detail: 'File session không có trường cookies.' };
   }
 
-  // Tìm cookie c_user (chứng tỏ đã login Facebook)
   const cUserCookie = sessionData.cookies.find(c => c.name === 'c_user');
   if (!cUserCookie) {
-    logSession('warn', 'Session missing c_user cookie — chưa login.');
     return { status: 'expired', detail: 'Không tìm thấy cookie c_user (chưa đăng nhập).' };
   }
 
-  // Kiểm tra hạn cookie
   const nowUnix = Date.now() / 1000;
   if (cUserCookie.expires && cUserCookie.expires < nowUnix) {
     const expiredAt = new Date(cUserCookie.expires * 1000).toISOString();
-    logSession('warn', `Session expired at ${expiredAt}. c_user=${cUserCookie.value}`);
-    return {
-      status: 'expired',
-      detail: `Cookie c_user đã hết hạn vào ${expiredAt}.`,
-      cUser: cUserCookie.value,
-      expiresAt: expiredAt
-    };
+    return { status: 'expired', detail: `Cookie c_user đã hết hạn vào ${expiredAt}.`, cUser: cUserCookie.value, expiresAt: expiredAt };
   }
 
-  // Kiểm tra thêm cookie xs (session token)
   const xsCookie = sessionData.cookies.find(c => c.name === 'xs');
   if (!xsCookie) {
-    logSession('warn', 'Session missing xs cookie — có thể đã bị revoke.');
     return { status: 'expired', detail: 'Không tìm thấy cookie xs (session token).' };
   }
-
   if (xsCookie.expires && xsCookie.expires < nowUnix) {
     const expiredAt = new Date(xsCookie.expires * 1000).toISOString();
-    logSession('warn', `xs cookie expired at ${expiredAt}.`);
-    return {
-      status: 'expired',
-      detail: `Cookie xs (session token) đã hết hạn vào ${expiredAt}.`,
-      cUser: cUserCookie.value,
-      expiresAt: expiredAt
-    };
+    return { status: 'expired', detail: `Cookie xs đã hết hạn vào ${expiredAt}.`, cUser: cUserCookie.value, expiresAt: expiredAt };
   }
 
   const expiresAt = new Date(cUserCookie.expires * 1000).toISOString();
-  logSession('info', `Session valid. c_user=${cUserCookie.value}, expires=${expiresAt}`);
-  return {
-    status: 'valid',
-    detail: `Session hợp lệ. Hết hạn: ${expiresAt}`,
-    cUser: cUserCookie.value,
-    expiresAt
-  };
+  return { status: 'valid', detail: `Session hợp lệ. Hết hạn: ${expiresAt}`, cUser: cUserCookie.value, expiresAt };
 }
 
 // ── Save Session ────────────────────────────────────────────────────
 
 /**
  * Lưu storageState từ Playwright context vào file.
- * Tự động backup file cũ trước khi ghi đè.
- * 
- * @param {import('playwright').BrowserContext} context - Playwright browser context
- * @returns {Promise<boolean>} - true nếu lưu thành công
+ * @param {import('playwright').BrowserContext} context
+ * @returns {Promise<boolean>}
  */
 async function saveSession(context) {
   ensureDirs();
-
   try {
-    // Backup file cũ (nếu có)
     if (fs.existsSync(SESSION_FILE)) {
-      const backupPath = SESSION_FILE + '.bak';
-      fs.copyFileSync(SESSION_FILE, backupPath);
-      logSession('info', 'Backed up old session to fb_session.json.bak');
+      fs.copyFileSync(SESSION_FILE, SESSION_FILE + '.bak');
     }
-
-    // Lưu storageState mới
     await context.storageState({ path: SESSION_FILE });
     logSession('success', 'Session saved to ' + SESSION_FILE);
 
-    // Verify file đã ghi thành công
     const status = checkSessionStatus();
     if (status.status !== 'valid') {
       logSession('warn', 'Session saved but verification failed: ' + status.detail);
       return false;
     }
-
     return true;
   } catch (e) {
     logSession('error', 'Failed to save session: ' + e.message);
@@ -169,67 +135,49 @@ async function saveSession(context) {
   }
 }
 
-// ── Load Session ────────────────────────────────────────────────────
-
 /**
  * Trả về đường dẫn session file nếu session hợp lệ, null nếu không.
- * Dùng cho contextOptions.storageState khi tạo browser context.
- * 
  * @returns {string|null}
  */
 function getValidSessionPath() {
   const status = checkSessionStatus();
-  if (status.status === 'valid') {
-    return SESSION_FILE;
-  }
-  return null;
+  return status.status === 'valid' ? SESSION_FILE : null;
 }
 
 // ── Detect Login on Page ────────────────────────────────────────────
 
 /**
  * Kiểm tra trang hiện tại có phải trang login / checkpoint không.
- * 
  * @param {import('playwright').Page} page
- * @returns {Promise<boolean>} true nếu đang ở trang login (chưa đăng nhập)
+ * @returns {Promise<boolean>}
  */
 async function isLoginPage(page) {
   const currentUrl = page.url();
+  if (currentUrl.includes('/login') || currentUrl.includes('/checkpoint')) return true;
 
-  // URL-based checks
-  if (currentUrl.includes('/login') || currentUrl.includes('/checkpoint')) {
-    return true;
-  }
-
-  // DOM-based check: có form login không
   const loginFormExists = await page.$('form[id="login_form"]') !== null;
   if (loginFormExists) return true;
 
-  // DOM-based check: KHÔNG có navigation bar (đã đăng nhập sẽ có)
   const hasNavigation = await page.locator('div[role="navigation"]').count() > 0;
   if (!hasNavigation) {
-    // Chờ thêm 3s để trang load xong
     await page.waitForTimeout(3000);
-    const hasNavigationRetry = await page.locator('div[role="navigation"]').count() > 0;
-    if (!hasNavigationRetry) return true;
+    const retry = await page.locator('div[role="navigation"]').count() > 0;
+    if (!retry) return true;
   }
-
   return false;
 }
 
 /**
- * Đợi user login thủ công trên browser, timeout mặc định 5 phút.
- * 
+ * Đợi user login thủ công trên browser.
  * @param {import('playwright').Page} page
- * @param {number} timeoutMs - Timeout tính bằng ms (mặc định 300000 = 5 phút)
- * @returns {Promise<boolean>} true nếu login thành công
+ * @param {number} timeoutMs
+ * @returns {Promise<boolean>}
  */
 async function waitForManualLogin(page, timeoutMs = 300000) {
   logSession('info', `Đợi user login thủ công (timeout: ${timeoutMs / 1000}s)...`);
-
   try {
     await page.waitForSelector('div[role="navigation"]', { timeout: timeoutMs });
-    logSession('success', 'Phát hiện đăng nhập thành công (navigation bar xuất hiện).');
+    logSession('success', 'Phát hiện đăng nhập thành công.');
     return true;
   } catch (e) {
     logSession('error', 'Quá thời gian chờ đăng nhập: ' + e.message);
@@ -237,22 +185,189 @@ async function waitForManualLogin(page, timeoutMs = 300000) {
   }
 }
 
+// ── Xvfb helpers ────────────────────────────────────────────────────
+
+function isXvfbRunning(displayNum) {
+  try {
+    const r = execSync(`ps aux | grep "Xvfb :${displayNum}" | grep -v grep`, { stdio: 'pipe' }).toString();
+    return r.trim().length > 0;
+  } catch (_) { return false; }
+}
+
+function startXvfb(displayNum) {
+  if (isXvfbRunning(displayNum)) {
+    logSession('info', `Xvfb đã chạy trên :${displayNum}`);
+    return null;
+  }
+  logSession('info', `Khởi động Xvfb trên :${displayNum}...`);
+  const proc = spawn('Xvfb', [`:${displayNum}`, '-screen', '0', '1280x720x24'], {
+    stdio: 'ignore', detached: true
+  });
+  proc.unref();
+  execSync('sleep 1');
+  logSession('success', `Xvfb started on :${displayNum}`);
+  return proc;
+}
+
+function getServerIP() {
+  try {
+    const result = execSync("hostname -I 2>/dev/null | awk '{print $1}'", { stdio: 'pipe' }).toString().trim();
+    return result || 'localhost';
+  } catch (_) { return 'localhost'; }
+}
+
+// ── Remote Login Flow ───────────────────────────────────────────────
+
+/**
+ * Khởi động browser headful trên server với persistent profile,
+ * mở Facebook, cho user login từ xa qua CDP remote debug.
+ * Sau khi login xong, lưu session về fb_session.json.
+ *
+ * @param {object} opts
+ * @param {boolean} opts.force - Bắt buộc mở browser kể cả session còn valid
+ * @returns {Promise<{success: boolean, url?: string, status?: object}>}
+ */
+async function startRemoteLoginSession(opts = {}) {
+  ensureDirs();
+
+  // Kiểm tra session hiện tại
+  if (!opts.force) {
+    const status = checkSessionStatus();
+    if (status.status === 'valid') {
+      logSession('info', 'Session vẫn valid, không cần login lại.');
+      return { success: true, status };
+    }
+    logSession('warn', `Session cần renew: ${status.detail}`);
+  }
+
+  // Kiểm tra Xvfb
+  let hasXvfb = false;
+  try { execSync('which Xvfb', { stdio: 'pipe' }); hasXvfb = true; } catch (_) {}
+
+  const hasDisplay = !!process.env.DISPLAY;
+  const isLocal = process.env.ENV === 'local';
+  const startedProcesses = [];
+
+  // Setup display
+  if (!isLocal && !hasDisplay && hasXvfb) {
+    const xvfbProc = startXvfb(DISPLAY_NUM);
+    if (xvfbProc) startedProcesses.push(xvfbProc);
+    process.env.DISPLAY = `:${DISPLAY_NUM}`;
+  } else if (!isLocal && !hasDisplay && !hasXvfb) {
+    logSession('error', 'Không có DISPLAY và Xvfb. Cài: sudo apt-get install -y xvfb');
+    return { success: false };
+  }
+
+  // Launch persistent context (headful, dùng browser-data/)
+  logSession('info', 'Khởi động Chromium persistent context (browser-data/)...');
+
+  let context;
+  try {
+    context = await chromium.launchPersistentContext(BROWSER_DATA_DIR, {
+      headless: false,
+      viewport: { width: 1280, height: 720 },
+      userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+      locale: 'vi-VN',
+      timezoneId: 'Asia/Ho_Chi_Minh',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-blink-features=AutomationControlled',
+        `--remote-debugging-port=${CDP_PORT}`,
+        '--remote-debugging-address=0.0.0.0'
+      ]
+    });
+  } catch (e) {
+    logSession('error', 'Không thể khởi động Chromium: ' + e.message);
+    cleanup(startedProcesses);
+    return { success: false };
+  }
+
+  const page = context.pages()[0] || await context.newPage();
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+  });
+
+  // Mở Facebook
+  logSession('info', 'Mở Facebook...');
+  await page.goto('https://www.facebook.com', { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.waitForTimeout(3000);
+
+  const serverIP = getServerIP();
+  const cdpUrl = `http://${serverIP}:${CDP_PORT}`;
+
+  const needLogin = await isLoginPage(page);
+
+  if (!needLogin) {
+    logSession('success', 'Đã đăng nhập sẵn trong persistent profile!');
+    await saveSession(context);
+    await context.close();
+    cleanup(startedProcesses);
+    const finalStatus = checkSessionStatus();
+    return { success: true, status: finalStatus };
+  }
+
+  // Trả về URL cho admin kết nối
+  console.log('');
+  console.log('═'.repeat(64));
+  console.log('🖥️  BROWSER ĐÃ MỞ TRÊN SERVER — CẦN LOGIN FACEBOOK');
+  console.log('═'.repeat(64));
+  console.log('');
+  console.log('  Mở link sau trên trình duyệt (ưu tiên Chrome/Edge) để xem màn hình:');
+  console.log('');
+  console.log(`  👉  ${cdpUrl}`);
+  console.log('');
+  console.log('  Bước 1: Mở link trên → click vào liên kết trang Facebook');
+  console.log('  Bước 2: Một cửa sổ tương tự Developer Tools sẽ hiện ra, bạn có thể tương tác trực tiếp!');
+  console.log('  Bước 3: Login Facebook, giải CAPTCHA nếu có');
+  console.log('  Bước 4: Script tự phát hiện login và lưu session');
+  console.log(`  ⏳ Timeout: ${LOGIN_TIMEOUT_MS / 60000} phút`);
+  console.log('');
+  console.log('═'.repeat(64));
+
+  const loginResult = { success: false, url: cdpUrl };
+
+  // Đợi login
+  const loginSuccess = await waitForManualLogin(page, LOGIN_TIMEOUT_MS);
+
+  if (loginSuccess) {
+    await saveSession(context);
+    const finalStatus = checkSessionStatus();
+    loginResult.success = true;
+    loginResult.status = finalStatus;
+
+    console.log('');
+    console.log('═'.repeat(64));
+    console.log('✅ SESSION ĐÃ LƯU THÀNH CÔNG!');
+    console.log(`   User:    ${finalStatus.cUser || 'N/A'}`);
+    console.log(`   Hết hạn: ${finalStatus.expiresAt || 'N/A'}`);
+    console.log(`   File:    ${SESSION_FILE}`);
+    console.log('═'.repeat(64));
+  } else {
+    logSession('error', 'Login thất bại — quá thời gian chờ.');
+  }
+
+  await context.close();
+  cleanup(startedProcesses);
+  return loginResult;
+}
+
+function cleanup(processes) {
+  for (const proc of processes) {
+    if (proc && proc.pid) {
+      try { process.kill(-proc.pid, 'SIGTERM'); } catch (_) {}
+    }
+  }
+}
+
 // ── Exports ─────────────────────────────────────────────────────────
 
 module.exports = {
-  // Paths
-  WORKSPACE_ROOT,
-  SESSION_DIR,
-  SESSION_FILE,
-  BROWSER_DATA_DIR,
-  DEBUG_DIR,
-
-  // Functions
-  ensureDirs,
-  logSession,
-  checkSessionStatus,
-  saveSession,
-  getValidSessionPath,
-  isLoginPage,
-  waitForManualLogin
+  WORKSPACE_ROOT, SESSION_DIR, SESSION_FILE, BROWSER_DATA_DIR, DEBUG_DIR,
+  CDP_PORT, LOGIN_TIMEOUT_MS,
+  ensureDirs, logSession,
+  checkSessionStatus, saveSession, getValidSessionPath,
+  isLoginPage, waitForManualLogin,
+  startRemoteLoginSession, getServerIP
 };
