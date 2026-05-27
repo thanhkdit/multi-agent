@@ -31,11 +31,18 @@ Sử dụng khi Orchestrator yêu cầu chạy phân tích kênh TikTok bằng `
 `node ./workspaces/agent-scraper/scripts/tiktok/analytic.js "<uniqueId>"`
 *(Lưu ý: tham số `<uniqueId>` là ID của kênh TikTok, ví dụ: "realpewpew")*
 
-## Lệnh 5: Lấy session mới khi hết hạn
-Sử dụng khi Orchestrator yêu cầu lấy session mới bằng `session_generator.js`.
-**Cú pháp:**
-`node ./workspaces/agent-scraper/scripts/session_generator.js
-*(Lưu ý: Người dùng sẽ tự login thủ công, sau đó script sẽ tự lưu session lại*
+## Lệnh 5: Quản lý Session Facebook
+Sử dụng khi cần kiểm tra hoặc renew session Facebook.
+
+**Kiểm tra trạng thái session:**
+`node ./workspaces/agent-scraper/scripts/session_generator.js --check`
+
+**Login lại (chỉ khi session hết hạn):**
+`node ./workspaces/agent-scraper/scripts/session_generator.js`
+
+**Bắt buộc login lại (force renew):**
+`node ./workspaces/agent-scraper/scripts/session_generator.js --force`
+*(Lưu ý: Script sẽ tự mở browser trên server (Xvfb + VNC), user kết nối VNC để login thủ công, session được lưu tự động)*
 
 ---
 

@@ -4,6 +4,7 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const { chromium } = require('playwright');
 const fs = require('fs');
 const axios = require('axios');
+const sessionManager = require('./session_manager');
 
 const CONFIG = {
   SESSION_DIR: path.join(__dirname, '../.openclaw'),
@@ -445,26 +446,18 @@ class FacebookScraper {
   }
 
   async handleLogin(page) {
-    const sessionPath = path.join(CONFIG.SESSION_DIR, 'fb_session.json');
-    // console.log('🚀 [MANUAL LOGIN] Đang mở Facebook để kiểm tra trạng thái đăng nhập...');
     await page.goto('https://facebook.com', { waitUntil: 'networkidle', timeout: 60000 });
 
-    const isAlreadyLoggedIn = await page.locator('div[role="navigation"]').count() > 0;
+    const needLogin = await sessionManager.isLoginPage(page);
 
-    if (!isAlreadyLoggedIn) {
-      // console.log('👉 Cần đăng nhập thủ công trên trình duyệt.');
-      // console.log('⏳ Đang chờ vào được Newsfeed...');
-      try {
-        await page.waitForSelector('div[role="navigation"]', { timeout: 300000 });
-        // console.log('✅ [MANUAL LOGIN] Đã nhận diện đăng nhập thành công!');
-      } catch (e) {
+    if (needLogin) {
+      const loginSuccess = await sessionManager.waitForManualLogin(page, 300000);
+      if (!loginSuccess) {
         throw new Error('❌ [MANUAL LOGIN] Quá thời gian chờ đăng nhập.');
       }
-    } else {
-      // console.log('✅ [MANUAL LOGIN] Tài khoản đã ở trạng thái đăng nhập sẵn.');
     }
 
-    await this.context.storageState({ path: sessionPath });
+    await sessionManager.saveSession(this.context);
   }
 
   async extractPageInfo(page) {
@@ -658,28 +651,15 @@ class FacebookScraper {
 async function universalScrape(url, limitStr = '6') {
   detectPlatform(url);
 
-  const sessionPath = path.join(CONFIG.SESSION_DIR, 'fb_session.json');
-  let hasSession = fs.existsSync(sessionPath);
-  let needManualLogin = !hasSession;
+  const status = sessionManager.checkSessionStatus();
+  const sessionPath = sessionManager.getValidSessionPath();
+  const hasSession = status.status === 'valid';
 
-  if (hasSession) {
-    try {
-      const sessionData = JSON.parse(require('fs').readFileSync(sessionPath, 'utf8'));
-      const cUserCookie = sessionData.cookies?.find(c => c.name === 'c_user');
-      if (!cUserCookie || (cUserCookie.expires && cUserCookie.expires < Date.now() / 1000)) {
-        needManualLogin = true;
-        hasSession = false;
-      }
-    } catch (e) {
-      needManualLogin = true;
-      hasSession = false;
-    }
-  }
-
-  if (needManualLogin) {
+  if (!hasSession) {
+    sessionManager.logSession('error', `Session không hợp lệ: ${status.detail}`);
     console.log(JSON.stringify({
       status: 'error',
-      error_details: 'Phiên đăng nhập (Session) đã hết hạn. Vui lòng báo admin đăng nhập lại Facebook.'
+      error_details: 'Phiên đăng nhập (Session) đã hết hạn. Vui lòng báo admin đăng nhập lại Facebook bằng: node scripts/session_generator.js --force'
     }));
     process.exit(0);
   }
@@ -695,18 +675,15 @@ async function universalScrape(url, limitStr = '6') {
 
   const contextOptions = {
     viewport: { width: 1600, height: 1200 },
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36'
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+    storageState: sessionPath
   };
-
-  if (hasSession) {
-    contextOptions.storageState = sessionPath;
-  }
 
   const context = await browser.newContext(contextOptions);
 
   try {
     const scraper = new FacebookScraper(context);
-    const result = await scraper.scrape(url, limitStr, needManualLogin);
+    const result = await scraper.scrape(url, limitStr, true);
     console.log(JSON.stringify(result, null, 2));
   } catch (err) {
     logError(err.message);
