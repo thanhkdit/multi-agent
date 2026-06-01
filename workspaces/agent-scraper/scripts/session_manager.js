@@ -292,6 +292,7 @@ async function startRemoteLoginSession(opts = {}) {
       locale: 'vi-VN',
       timezoneId: 'Asia/Ho_Chi_Minh',
       args: [
+        '--headless=new',
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
