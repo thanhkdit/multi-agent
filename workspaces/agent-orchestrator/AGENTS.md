@@ -12,15 +12,18 @@ Bạn CHỈ thực hiện phân tích, đánh giá, quyết định, đề xuấ
 
 # EXECUTION FLOW
 
-- **Trường hợp tạo Session Login (Facebook):** Nếu user yêu cầu "login facebook", "tạo session mới", "đăng nhập lại", v.v... 
-  1. Đầu tiên, hãy gọi `agent-scraper` chạy script `session_generator.js --check` để kiểm tra trạng thái session hiện tại.
-  2. Nếu kết quả trả về báo session **vẫn còn hạn (valid)**: Bạn BẮT BUỘC phải thông báo cho user biết session hiện tại vẫn hoạt động tốt, và yêu cầu user xác nhận (Confirm) xem có thực sự muốn xóa session cũ và tạo lại không. Chỉ khi user gõ "Đồng ý", "Xác nhận", hoặc tương đương thì mới đi tiếp bước 3.
-  3. Nếu session **hết hạn (expired)** hoặc user đã xác nhận đồng ý tạo lại: Hãy gọi `agent-scraper` chạy script `session_generator.js --force`.
-  4. Trích xuất đường link Web VNC (thường có định dạng `http://<IP>:3000` từ kết quả) và gửi ngay cho user kèm hướng dẫn để user click vào tự đăng nhập.
-  5. Ngừng tiến trình xử lý tại đây.
+- **Trường hợp tạo Session Login (Facebook):** Nếu user yêu cầu "login facebook", "tạo session mới", "đăng nhập lại", "tài khoản facebook mới", v.v... 
+  1. Nếu user NÓI RÕ là muốn đăng nhập tài khoản MỚI hoặc ép buộc tạo session mới: Hãy BỎ QUA bước check và gọi ngay `agent-scraper` chạy script `session_generator.js --force`.
+  2. Nếu không, hãy gọi `agent-scraper` chạy script `session_generator.js --check` để kiểm tra trạng thái session hiện tại.
+  3. Nếu kết quả trả về báo session **vẫn còn hạn (valid)**: Bạn BẮT BUỘC phải thông báo cho user biết session hiện tại vẫn hoạt động tốt, và yêu cầu user xác nhận (Confirm) xem có thực sự muốn xóa session cũ và tạo lại không. Chỉ khi user gõ "Đồng ý", "Xác nhận", hoặc tương đương thì mới đi tiếp bước 4.
+  4. Nếu session **hết hạn (expired)** hoặc user đã xác nhận đồng ý tạo lại: Hãy gọi `agent-scraper` chạy script `session_generator.js --force`.
+  5. Trích xuất đường link Web VNC (thường có định dạng `https://<domain>/browser/` từ kết quả) và gửi ngay cho user kèm hướng dẫn để user click vào tự đăng nhập.
+  6. Ngừng tiến trình xử lý tại đây.
 
 - **Trường hợp thu thập và phân tích dữ liệu đối thủ (Có liên quan đến Facebook):**
-  - **BẮT BUỘC:** Trước khi chạy các script liên quan đến Facebook (`facebook_discovery.js` hoặc `universal_scraper.js`), hệ thống sẽ kiểm tra session. Nếu session hết hạn hoặc gặp lỗi `SESSION_EXPIRED` từ đầu ra của các script này, bạn phải **ngừng tiến trình lập tức và báo ngay cho user biết session hết hạn**, đồng thời hỏi xem họ có muốn bạn tạo link đăng nhập mới không. Không được cố chạy tiếp khi session đã hết hạn.
+  - **BẮT BUỘC:** TRƯỚC KHI chạy script `universal_scraper.js`, bạn PHẢI yêu cầu `agent-scraper` chạy `session_generator.js --check` để kiểm tra trạng thái của file `.openclaw/fb_session.json`. 
+  - Nếu kết quả trả về là session **đã hết hạn (expired)** hoặc lỗi: BẠN PHẢI ngừng tiến trình lập tức, báo luôn cho user biết session đã hết hạn và hỏi xem họ có muốn bạn chạy script lấy session mới không. Tuyệt đối không được cố chạy script trích xuất khi session đã hết hạn.
+  - Chỉ khi session **còn hạn (valid)**, bạn mới được phép gọi `universal_scraper.js`.
 
 - **Trường hợp thu thập và phân tích dữ liệu tổng thể (Holistic):** Luôn xử lý yêu cầu theo tiến trình 5 bước sau:
 
