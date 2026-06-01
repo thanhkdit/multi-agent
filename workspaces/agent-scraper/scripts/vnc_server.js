@@ -64,13 +64,15 @@ function startVncServer(page, port) {
           isPolling = false;
           return;
         }
+        img.onload = () => { if (isPolling) setTimeout(updateScreen, 500); };
+        img.onerror = () => { if (isPolling) setTimeout(updateScreen, 2000); };
         img.src = '/screenshot?' + Date.now();
       } catch (e) {
         statusEl.textContent = '❌ Đã đóng trình duyệt (Hoặc mất kết nối).';
         statusEl.style.background = '#f44336';
         statusEl.style.color = '#fff';
+        if (isPolling) setTimeout(updateScreen, 2000);
       }
-      if (isPolling) setTimeout(updateScreen, 1000);
     }
     
     updateScreen();
@@ -118,7 +120,6 @@ function startVncServer(page, port) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'mouseup', x, y })
       });
-      img.src = '/screenshot?' + Date.now();
     });
 
     img.addEventListener('wheel', async (e) => {
@@ -129,7 +130,6 @@ function startVncServer(page, port) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'wheel', deltaX: e.deltaX, deltaY: e.deltaY })
       });
-      setTimeout(() => img.src = '/screenshot?' + Date.now(), 200);
     }, { passive: false });
 
     async function sendText() {
@@ -142,7 +142,6 @@ function startVncServer(page, port) {
         body: JSON.stringify({ type: 'text', text: input.value })
       });
       input.value = '';
-      img.src = '/screenshot?' + Date.now();
     }
 
     async function sendKey(key) {
@@ -152,7 +151,6 @@ function startVncServer(page, port) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'key', key })
       });
-      img.src = '/screenshot?' + Date.now();
     }
 
     // Lắng nghe toàn bộ bàn phím để gõ trực tiếp
@@ -177,8 +175,6 @@ function startVncServer(page, port) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'key', key })
       });
-      // Delay update screen cho cảm giác mượt hơn khi gõ nhanh
-      setTimeout(() => img.src = '/screenshot?' + Date.now(), 100);
     });
   </script>
 </body>

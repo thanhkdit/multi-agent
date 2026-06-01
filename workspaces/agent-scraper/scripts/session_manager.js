@@ -297,7 +297,7 @@ async function startRemoteLoginSession(opts = {}) {
         '--disable-dev-shm-usage',
         '--disable-blink-features=AutomationControlled',
         '--disable-gpu',
-        '--disable-software-rasterizer',
+        '--window-size=1280,720',
         `--remote-debugging-port=${CDP_PORT}`,
         '--remote-debugging-address=0.0.0.0'
       ]
