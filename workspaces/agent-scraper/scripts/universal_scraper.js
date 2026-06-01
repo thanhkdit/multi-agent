@@ -654,32 +654,14 @@ async function universalScrape(url, limitStr = '6') {
   let status = sessionManager.checkSessionStatus();
   let sessionPath = sessionManager.getValidSessionPath();
 
-  // Session hết hạn → tự động mở browser trên server để admin login từ xa
+  // Session hết hạn → báo lỗi ngay lập tức
   if (status.status !== 'valid') {
-    sessionManager.logSession('warn', `Session không hợp lệ: ${status.detail}`);
-    sessionManager.logSession('info', 'Khởi động remote login flow...');
-
-    const loginResult = await sessionManager.startRemoteLoginSession({ force: true });
-
-    if (!loginResult.success) {
-      console.log(JSON.stringify({
-        status: 'error',
-        error_details: 'Không thể login Facebook. Chạy thủ công: node scripts/session_generator.js --force'
-      }));
-      process.exit(0);
-    }
-
-    // Reload session sau khi login
-    status = sessionManager.checkSessionStatus();
-    sessionPath = sessionManager.getValidSessionPath();
-
-    if (!sessionPath) {
-      console.log(JSON.stringify({
-        status: 'error',
-        error_details: 'Session vẫn không hợp lệ sau khi login. Thử lại: node scripts/session_generator.js --force'
-      }));
-      process.exit(0);
-    }
+    console.log(JSON.stringify({
+      status: 'error',
+      error_type: 'SESSION_EXPIRED',
+      error_details: `Phiên đăng nhập Facebook không hợp lệ hoặc đã hết hạn: ${status.detail}`
+    }, null, 2));
+    process.exit(0);
   }
 
   const browser = await chromium.launch({

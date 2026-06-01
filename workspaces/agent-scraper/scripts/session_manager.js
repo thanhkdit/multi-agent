@@ -17,6 +17,7 @@
 
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const { chromium } = require('playwright');
 const { execSync, spawn } = require('child_process');
 const { startVncServer } = require('./vnc_server');
@@ -256,11 +257,11 @@ async function startRemoteLoginSession(opts = {}) {
   const startedProcesses = [];
 
   // Setup display
-  if (!isLocal && !hasDisplay && hasXvfb) {
+  if (!hasDisplay && hasXvfb) {
     const xvfbProc = startXvfb(DISPLAY_NUM);
     if (xvfbProc) startedProcesses.push(xvfbProc);
     process.env.DISPLAY = `:${DISPLAY_NUM}`;
-  } else if (!isLocal && !hasDisplay && !hasXvfb) {
+  } else if (!hasDisplay && !hasXvfb) {
     logSession('error', 'Không có DISPLAY và Xvfb. Cài: sudo apt-get install -y xvfb');
     return { success: false };
   }
@@ -303,7 +304,7 @@ async function startRemoteLoginSession(opts = {}) {
 
   const serverIP = getServerIP();
   const cdpUrl = `http://${serverIP}:${CDP_PORT}`;
-  const vncUrl = `http://${serverIP}:${VNC_PORT}`;
+  const vncUrl = process.env.VNC_PUBLIC_URL || `http://${serverIP}:${VNC_PORT}`;
 
   const needLogin = await isLoginPage(page);
 

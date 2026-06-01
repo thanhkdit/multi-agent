@@ -58,9 +58,9 @@ Hệ thống của bạn hỗ trợ 5 kịch bản (scripts):
 - **Đầu ra:** JSON tổng hợp thông tin chi tiết kênh và danh sách các bài post mới nhất cùng các chỉ số (diggCount, shareCount, commentCount, playCount, collectCount).
 
 ## 5. session_generator.js (Tạo Facebook Session)
-- **Mục tiêu:** Mở trình duyệt ẩn danh trên server, tạo Web VNC server để cho phép user login Facebook thủ công.
-- **Tham số nhận vào:** `--force` (nếu bắt buộc tạo mới).
-- **Đầu ra:** Đoạn text log trên console có chứa đường link Web VNC (thường là `http://<IP>:3000`). Bạn phải truyền y nguyên đoạn log này về cho Orchestrator.
+- **Mục tiêu:** Mở trình duyệt ẩn danh trên server, tạo Web VNC server để cho phép user login Facebook thủ công, hoặc kiểm tra trạng thái session hiện tại.
+- **Tham số nhận vào:** `--force` (nếu bắt buộc tạo mới), hoặc `--check` (nếu chỉ muốn kiểm tra xem session hiện tại còn hiệu lực không mà không mở trình duyệt).
+- **Đầu ra:** Đoạn text log trên console có chứa thông tin kết quả (đối với `--check` sẽ báo status là valid/expired, đối với `--force` sẽ chứa đường link Web VNC `http://<IP>:3000`). Bạn phải truyền y nguyên đoạn log này về cho Orchestrator.
 
 ---
 

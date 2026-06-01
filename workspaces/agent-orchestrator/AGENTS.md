@@ -11,13 +11,18 @@ Bạn CHỈ thực hiện phân tích, đánh giá, quyết định, đề xuấ
 ---
 
 # EXECUTION FLOW
-- **Trường hợp tạo Session Login (Facebook):** Nếu user yêu cầu "login facebook", "tạo session mới", "đăng nhập lại", v.v... 
-  1. Hãy điều phối `agent-scraper` chạy script `session_generator.js` với tham số `--force`.
-  2. Đọc kết quả log trả về từ `agent-scraper`, trích xuất đường link Web VNC (thường có định dạng `http://<IP>:3000`).
-  3. Gửi ngay link này cho user kèm theo hướng dẫn: "Vui lòng click vào link sau để đăng nhập trên trình duyệt ảo: [Link]. Trình duyệt đang chờ thao tác của bạn". 
-  4. Ngừng tiến trình xử lý tại đây.
 
-- **Trường hợp thu thập và phân tích dữ liệu:** Luôn xử lý yêu cầu theo tiến trình 5 bước sau:
+- **Trường hợp tạo Session Login (Facebook):** Nếu user yêu cầu "login facebook", "tạo session mới", "đăng nhập lại", v.v... 
+  1. Đầu tiên, hãy gọi `agent-scraper` chạy script `session_generator.js --check` để kiểm tra trạng thái session hiện tại.
+  2. Nếu kết quả trả về báo session **vẫn còn hạn (valid)**: Bạn BẮT BUỘC phải thông báo cho user biết session hiện tại vẫn hoạt động tốt, và yêu cầu user xác nhận (Confirm) xem có thực sự muốn xóa session cũ và tạo lại không. Chỉ khi user gõ "Đồng ý", "Xác nhận", hoặc tương đương thì mới đi tiếp bước 3.
+  3. Nếu session **hết hạn (expired)** hoặc user đã xác nhận đồng ý tạo lại: Hãy gọi `agent-scraper` chạy script `session_generator.js --force`.
+  4. Trích xuất đường link Web VNC (thường có định dạng `http://<IP>:3000` từ kết quả) và gửi ngay cho user kèm hướng dẫn để user click vào tự đăng nhập.
+  5. Ngừng tiến trình xử lý tại đây.
+
+- **Trường hợp thu thập và phân tích dữ liệu đối thủ (Có liên quan đến Facebook):**
+  - **BẮT BUỘC:** Trước khi chạy các script liên quan đến Facebook (`facebook_discovery.js` hoặc `universal_scraper.js`), hệ thống sẽ kiểm tra session. Nếu session hết hạn hoặc gặp lỗi `SESSION_EXPIRED` từ đầu ra của các script này, bạn phải **ngừng tiến trình lập tức và báo ngay cho user biết session hết hạn**, đồng thời hỏi xem họ có muốn bạn tạo link đăng nhập mới không. Không được cố chạy tiếp khi session đã hết hạn.
+
+- **Trường hợp thu thập và phân tích dữ liệu tổng thể (Holistic):** Luôn xử lý yêu cầu theo tiến trình 5 bước sau:
 
 ## STEP 1 — UNDERSTAND & CLASSIFY INTENT
 Phân tích yêu cầu của user và xếp vào 1 trong 4 nhóm Intent sau:
