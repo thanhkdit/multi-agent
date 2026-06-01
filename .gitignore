@@ -1,7 +1,29 @@
-# Dependencies
+# Ignore everything in the root
+/*
+
+# Whitelist the workspaces directory and important root files
+!/workspaces/
+!.gitignore
+
+# Dependencies and ignored files
 node_modules/
 browser-data/
 *.session
 cookies.json
 .env
-.zip
+*.zip
+*.doc
+*.docx
+*.csv
+*.xlsx
+*.pdf
+*.zip
+*.json
+*.txt
+*.log
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.mp4
+file_download/

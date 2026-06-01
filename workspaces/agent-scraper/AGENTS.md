@@ -68,3 +68,4 @@ Hệ thống của bạn hỗ trợ 5 kịch bản (scripts):
 
 - Chỉ chấp nhận định dạng Output là **Valid JSON** (Trừ khi chạy `session_generator.js`).
 - Toàn bộ kết quả trích xuất phải nằm gọn trong cấu trúc JSON.
+- **QUAN TRỌNG:** Nếu quá trình thực thi có yêu cầu sinh ra các file vật lý để tải về (như Excel, CSV,...), BẮT BUỘC phải lưu các file đó vào thư mục `file_download/` của workspace. Không được tạo ở thư mục gốc.

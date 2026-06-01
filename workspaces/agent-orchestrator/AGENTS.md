@@ -84,3 +84,4 @@ Trong bất kỳ tiến trình nào, nếu JSON trả về chứa lỗi `quota e
 - Phần dữ liệu LUÔN phải có các cột, nếu rỗng thì để trống:
 
 | Nguồn (Feed/Ads) | Ngày đăng | Nội dung gốc (trích dẫn toàn bộ nội dung) | Tóm tắt nhanh | Reactions (L/C/S) | Link
+- **QUAN TRỌNG:** Nếu người dùng yêu cầu xuất file, tạo báo cáo hoặc tạo file tải về (Excel, CSV,...), bạn BẮT BUỘC phải lưu các file đó vào thư mục `file_download/` (ví dụ: `file_download/report_koc.xlsx`). Không được tạo ở thư mục gốc của workspace.
