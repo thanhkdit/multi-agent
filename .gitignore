@@ -1,10 +1,3 @@
-# Ignore everything in the root
-/*
-
-# Whitelist the workspaces directory and important root files
-!/workspaces/
-!.gitignore
-
 # Dependencies and ignored files
 node_modules/
 browser-data/
