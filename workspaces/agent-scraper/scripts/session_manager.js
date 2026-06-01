@@ -19,6 +19,7 @@ const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
 const { execSync, spawn } = require('child_process');
+const { startVncServer } = require('./vnc_server');
 
 // ── Paths ────────────────────────────────────────────────────────────
 const WORKSPACE_ROOT = path.resolve(__dirname, '..');
@@ -32,6 +33,7 @@ const SESSION_LOG = path.join(DEBUG_DIR, 'session.log');
 const DISPLAY_NUM = process.env.DISPLAY_NUM || '99';
 const LOGIN_TIMEOUT_MS = parseInt(process.env.LOGIN_TIMEOUT_MS) || 600000; // 10 phút
 const CDP_PORT = parseInt(process.env.CDP_PORT) || 9222;
+const VNC_PORT = parseInt(process.env.VNC_PORT) || 3000;
 
 // Đảm bảo các thư mục tồn tại
 function ensureDirs() {
@@ -152,19 +154,24 @@ function getValidSessionPath() {
  * @returns {Promise<boolean>}
  */
 async function isLoginPage(page) {
-  const currentUrl = page.url();
-  if (currentUrl.includes('/login') || currentUrl.includes('/checkpoint')) return true;
+  try {
+    const currentUrl = page.url();
+    if (currentUrl.includes('/login') || currentUrl.includes('/checkpoint')) return true;
 
-  const loginFormExists = await page.$('form[id="login_form"]') !== null;
-  if (loginFormExists) return true;
+    const loginFormExists = await page.$('form[id="login_form"]').catch(() => null) !== null;
+    if (loginFormExists) return true;
 
-  const hasNavigation = await page.locator('div[role="navigation"]').count() > 0;
-  if (!hasNavigation) {
-    await page.waitForTimeout(3000);
-    const retry = await page.locator('div[role="navigation"]').count() > 0;
-    if (!retry) return true;
+    const hasNavigation = await page.locator('div[role="navigation"]').count().catch(() => 0) > 0;
+    if (!hasNavigation) {
+      await page.waitForTimeout(3000);
+      const retry = await page.locator('div[role="navigation"]').count().catch(() => 0) > 0;
+      if (!retry) return true;
+    }
+    return false;
+  } catch (e) {
+    // If page closes or context destroys during check, return true to force a login/retry
+    return true;
   }
-  return false;
 }
 
 /**
@@ -296,6 +303,7 @@ async function startRemoteLoginSession(opts = {}) {
 
   const serverIP = getServerIP();
   const cdpUrl = `http://${serverIP}:${CDP_PORT}`;
+  const vncUrl = `http://${serverIP}:${VNC_PORT}`;
 
   const needLogin = await isLoginPage(page);
 
@@ -308,25 +316,28 @@ async function startRemoteLoginSession(opts = {}) {
     return { success: true, status: finalStatus };
   }
 
+  // Khởi chạy Web VNC Server
+  const vncServer = startVncServer(page, VNC_PORT);
+
   // Trả về URL cho admin kết nối
   console.log('');
   console.log('═'.repeat(64));
   console.log('🖥️  BROWSER ĐÃ MỞ TRÊN SERVER — CẦN LOGIN FACEBOOK');
   console.log('═'.repeat(64));
   console.log('');
-  console.log('  Mở link sau trên trình duyệt (ưu tiên Chrome/Edge) để xem màn hình:');
+  console.log('  Mở đường dẫn sau trên trình duyệt để đăng nhập thủ công:');
   console.log('');
-  console.log(`  👉  ${cdpUrl}`);
+  console.log(`  👉  ${vncUrl}`);
   console.log('');
-  console.log('  Bước 1: Mở link trên → click vào liên kết trang Facebook');
-  console.log('  Bước 2: Một cửa sổ tương tự Developer Tools sẽ hiện ra, bạn có thể tương tác trực tiếp!');
-  console.log('  Bước 3: Login Facebook, giải CAPTCHA nếu có');
+  console.log('  Bước 1: Mở link trên, bạn sẽ thấy giao diện của trình duyệt');
+  console.log('  Bước 2: Click vào ô Username/Password và sử dụng nút "Gửi Text" để nhập');
+  console.log('  Bước 3: Bấm Enter hoặc click nút Đăng nhập để vào Facebook');
   console.log('  Bước 4: Script tự phát hiện login và lưu session');
   console.log(`  ⏳ Timeout: ${LOGIN_TIMEOUT_MS / 60000} phút`);
   console.log('');
   console.log('═'.repeat(64));
 
-  const loginResult = { success: false, url: cdpUrl };
+  const loginResult = { success: false, url: vncUrl };
 
   // Đợi login
   const loginSuccess = await waitForManualLogin(page, LOGIN_TIMEOUT_MS);
@@ -348,6 +359,7 @@ async function startRemoteLoginSession(opts = {}) {
     logSession('error', 'Login thất bại — quá thời gian chờ.');
   }
 
+  vncServer.close();
   await context.close();
   cleanup(startedProcesses);
   return loginResult;

@@ -19,8 +19,8 @@ Thực thi 100% theo luồng 3 bước sau:
 
 ## STEP 1 — PARSE INSTRUCTION
 Đọc thông điệp từ Orchestrator để xác định:
-- Script cần chạy (`facebook_discovery.js`, `universal_scraper.js`, `video_transcript.py`, hoặc `tiktok/analytic.js`).
-- Tham số truyền vào (Tên page, URL + Limit, hoặc TikTok uniqueId).
+- Script cần chạy (`facebook_discovery.js`, `universal_scraper.js`, `video_transcript.py`, `tiktok/analytic.js` hoặc `session_generator.js`).
+- Tham số truyền vào (Tên page, URL + Limit, TikTok uniqueId, hoặc --force).
 
 ## STEP 2 — EXECUTE SCRIPT
 Thực thi lệnh gọi script tương ứng.
@@ -29,12 +29,13 @@ Thực thi lệnh gọi script tương ứng.
 
 ## STEP 3 — RETURN ARTIFACT
 Trả nguyên bản đầu ra của script (chuỗi JSON) lại cho Orchestrator. Tuyệt đối không thêm thắt bất kỳ ký tự nào bên ngoài cấu trúc JSON.
+*Ngoại lệ:* Nếu chạy `session_generator.js`, hãy trả về nguyên văn toàn bộ log terminal (trong đó chứa đường link http) để Orchestrator xử lý.
 
 ---
 
 # ACCEPTED SCRIPTS
 
-Hệ thống của bạn hỗ trợ đúng 3 kịch bản (scripts):
+Hệ thống của bạn hỗ trợ 5 kịch bản (scripts):
 
 ## 1. facebook_discovery.js (Trích xuất Ads Library)
 - **Mục tiêu:** Truy cập `https://facebook.com/ads/library`, tìm page quảng cáo, quét và lấy toàn bộ nội dung quảng cáo đang chạy.
@@ -56,9 +57,14 @@ Hệ thống của bạn hỗ trợ đúng 3 kịch bản (scripts):
 - **Tham số nhận vào:** `<uniqueId>` (ID TikTok của kênh, ví dụ: "realpewpew").
 - **Đầu ra:** JSON tổng hợp thông tin chi tiết kênh và danh sách các bài post mới nhất cùng các chỉ số (diggCount, shareCount, commentCount, playCount, collectCount).
 
+## 5. session_generator.js (Tạo Facebook Session)
+- **Mục tiêu:** Mở trình duyệt ẩn danh trên server, tạo Web VNC server để cho phép user login Facebook thủ công.
+- **Tham số nhận vào:** `--force` (nếu bắt buộc tạo mới).
+- **Đầu ra:** Đoạn text log trên console có chứa đường link Web VNC (thường là `http://<IP>:3000`). Bạn phải truyền y nguyên đoạn log này về cho Orchestrator.
+
 ---
 
 # OUTPUT POLICY
 
-- Chỉ chấp nhận định dạng Output là **Valid JSON**.
+- Chỉ chấp nhận định dạng Output là **Valid JSON** (Trừ khi chạy `session_generator.js`).
 - Toàn bộ kết quả trích xuất phải nằm gọn trong cấu trúc JSON.
