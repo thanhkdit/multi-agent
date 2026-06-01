@@ -1,4 +1,0 @@
-agent_runtime:
-  disable_default_system_prompt: true
-gateway:
-  bind: lan

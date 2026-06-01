@@ -1,2 +1,0 @@
-[2026-05-11T09:07:28.724Z] Post parse failed at index 0: page.waitForTimeout: Target page, context or browser has been closed
-[2026-05-11T09:07:28.725Z] Post parse failed at index 1: locator.scrollIntoViewIfNeeded: Target page, context or browser has been closed
