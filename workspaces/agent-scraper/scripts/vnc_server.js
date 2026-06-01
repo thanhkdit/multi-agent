@@ -44,7 +44,7 @@ function startVncServer(page, port) {
   </div>
 
   <div id="screen-container">
-    <img id="screen" src="/screenshot?init" alt="Browser Screen" draggable="false" tabindex="0" />
+    <img id="screen" src="screenshot?init" alt="Browser Screen" draggable="false" tabindex="0" />
   </div>
 
   <script>
@@ -55,7 +55,7 @@ function startVncServer(page, port) {
     async function updateScreen() {
       if (!isPolling) return;
       try {
-        const res = await fetch('/status');
+        const res = await fetch('status');
         const data = await res.json();
         if (data.sessionValid) {
           statusEl.textContent = '✅ Đã lưu Session thành công! Bạn có thể đóng trang này.';
@@ -66,7 +66,7 @@ function startVncServer(page, port) {
         }
         img.onload = () => { if (isPolling) setTimeout(updateScreen, 500); };
         img.onerror = () => { if (isPolling) setTimeout(updateScreen, 2000); };
-        img.src = '/screenshot?' + Date.now();
+        img.src = 'screenshot?' + Date.now();
       } catch (e) {
         statusEl.textContent = '❌ Đã đóng trình duyệt (Hoặc mất kết nối).';
         statusEl.style.background = '#f44336';
@@ -94,7 +94,7 @@ function startVncServer(page, port) {
       isDragging = true;
       e.preventDefault(); // Ngăn kéo ảnh mặc định của trình duyệt
       const { x, y } = getCoords(e);
-      await fetch('/action', {
+      await fetch('action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'mousedown', x, y })
@@ -104,7 +104,7 @@ function startVncServer(page, port) {
     img.addEventListener('mousemove', async (e) => {
       if (!isPolling || !isDragging) return;
       const { x, y } = getCoords(e);
-      fetch('/action', {
+      fetch('action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'mousemove', x, y })
@@ -115,7 +115,7 @@ function startVncServer(page, port) {
       if (!isPolling) return;
       isDragging = false;
       const { x, y } = getCoords(e);
-      await fetch('/action', {
+      await fetch('action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'mouseup', x, y })
@@ -125,7 +125,7 @@ function startVncServer(page, port) {
     img.addEventListener('wheel', async (e) => {
       if (!isPolling) return;
       e.preventDefault();
-      await fetch('/action', {
+      await fetch('action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'wheel', deltaX: e.deltaX, deltaY: e.deltaY })
@@ -136,7 +136,7 @@ function startVncServer(page, port) {
       if (!isPolling) return;
       const input = document.getElementById('textInput');
       if (!input.value) return;
-      await fetch('/action', {
+      await fetch('action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'text', text: input.value })
@@ -146,7 +146,7 @@ function startVncServer(page, port) {
 
     async function sendKey(key) {
       if (!isPolling) return;
-      await fetch('/action', {
+      await fetch('action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'key', key })
@@ -170,7 +170,7 @@ function startVncServer(page, port) {
       if (key === 'Shift') key = 'Shift';
 
       // Chống spam phím
-      fetch('/action', {
+      fetch('action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'key', key })
