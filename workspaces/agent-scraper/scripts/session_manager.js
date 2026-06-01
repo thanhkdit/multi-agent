@@ -36,11 +36,20 @@ const LOGIN_TIMEOUT_MS = parseInt(process.env.LOGIN_TIMEOUT_MS) || 600000; // 10
 const CDP_PORT = parseInt(process.env.CDP_PORT) || 9222;
 const VNC_PORT = parseInt(process.env.VNC_PORT) || 3000;
 
-// Đảm bảo các thư mục tồn tại
+// Đảm bảo các thư mục tồn tại và dọn dẹp lock files cũ
 function ensureDirs() {
   fs.mkdirSync(SESSION_DIR, { recursive: true });
   fs.mkdirSync(DEBUG_DIR, { recursive: true });
   fs.mkdirSync(BROWSER_DATA_DIR, { recursive: true });
+
+  // Dọn dẹp Chromium SingletonLock cũ nếu có để tránh lỗi "Failed to create a ProcessSingleton"
+  const lockPath = path.join(BROWSER_DATA_DIR, 'SingletonLock');
+  if (fs.existsSync(lockPath)) {
+    try {
+      fs.unlinkSync(lockPath);
+      logSession('info', 'Đã dọn dẹp Chromium SingletonLock cũ.');
+    } catch (_) {}
+  }
 }
 
 // ── Logging ──────────────────────────────────────────────────────────
@@ -248,31 +257,36 @@ async function startRemoteLoginSession(opts = {}) {
     logSession('warn', `Session cần renew: ${status.detail}`);
   }
 
-  // Kiểm tra Xvfb
-  let hasXvfb = false;
-  try { execSync('which Xvfb', { stdio: 'pipe' }); hasXvfb = true; } catch (_) {}
-
-  const hasDisplay = !!process.env.DISPLAY;
-  const isLocal = process.env.ENV === 'local';
+  // Xác định chạy headless hay headful:
+  // - Mặc định chạy headless trên VPS (khi process.env.ENV !== 'local') để tránh lỗi thiếu Xvfb/DISPLAY.
+  // - Chạy headful nếu process.env.ENV === 'local' hoặc khi explicitly cấu hình HEADLESS=false.
+  const isHeadless = process.env.HEADLESS === 'true' || (process.env.ENV !== 'local' && process.env.HEADLESS !== 'false');
   const startedProcesses = [];
 
-  // Setup display
-  if (!hasDisplay && hasXvfb) {
-    const xvfbProc = startXvfb(DISPLAY_NUM);
-    if (xvfbProc) startedProcesses.push(xvfbProc);
-    process.env.DISPLAY = `:${DISPLAY_NUM}`;
-  } else if (!hasDisplay && !hasXvfb) {
-    logSession('error', 'Không có DISPLAY và Xvfb. Cài: sudo apt-get install -y xvfb');
-    return { success: false };
+  // Setup display (chỉ cần nếu chạy headful)
+  if (!isHeadless) {
+    let hasXvfb = false;
+    try { execSync('which Xvfb', { stdio: 'pipe' }); hasXvfb = true; } catch (_) {}
+
+    const hasDisplay = !!process.env.DISPLAY;
+
+    if (!hasDisplay && hasXvfb) {
+      const xvfbProc = startXvfb(DISPLAY_NUM);
+      if (xvfbProc) startedProcesses.push(xvfbProc);
+      process.env.DISPLAY = `:${DISPLAY_NUM}`;
+    } else if (!hasDisplay && !hasXvfb) {
+      logSession('error', 'Chạy headful nhưng không có DISPLAY và Xvfb. Hãy cài: sudo apt-get install -y xvfb hoặc cấu hình chạy headless.');
+      return { success: false };
+    }
   }
 
-  // Launch persistent context (headful, dùng browser-data/)
-  logSession('info', 'Khởi động Chromium persistent context (browser-data/)...');
+  // Launch persistent context (dùng browser-data/)
+  logSession('info', `Khởi động Chromium persistent context (${isHeadless ? 'headless' : 'headful'}, dùng browser-data/)...`);
 
   let context;
   try {
     context = await chromium.launchPersistentContext(BROWSER_DATA_DIR, {
-      headless: false,
+      headless: isHeadless,
       viewport: { width: 1280, height: 720 },
       userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       locale: 'vi-VN',
@@ -282,6 +296,8 @@ async function startRemoteLoginSession(opts = {}) {
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-blink-features=AutomationControlled',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
         `--remote-debugging-port=${CDP_PORT}`,
         '--remote-debugging-address=0.0.0.0'
       ]

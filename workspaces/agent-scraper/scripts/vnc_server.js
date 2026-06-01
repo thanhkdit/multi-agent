@@ -191,6 +191,7 @@ function startVncServer(page, port) {
         res.writeHead(200, { 'Content-Type': 'image/jpeg' });
         res.end(buffer);
       } catch (e) {
+        console.error('[VNC Server] Screenshot error:', e.message || e);
         res.writeHead(500); res.end();
       }
     } else if (req.method === 'GET' && req.url === '/status') {
@@ -229,6 +230,7 @@ function startVncServer(page, port) {
           }
           res.writeHead(200); res.end();
         } catch (e) {
+          console.error('[VNC Server] Action error:', e.message || e);
           res.writeHead(500); res.end();
         }
       });
