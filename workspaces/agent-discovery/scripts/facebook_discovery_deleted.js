@@ -387,7 +387,7 @@ async function main() {
 
   if (!query) {
     return outputError("missing_arguments", {
-      expected: "node facebook_discovery.js <query> [limit]"
+      expected: "node facebook_ads_library.js <query> [limit]"
     });
   }
 

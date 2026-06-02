@@ -89,17 +89,17 @@ LOGIN_TIMEOUT_MS=600000
 
 ### Scrape Facebook Page Posts
 ```bash
-node scripts/universal_scraper.js "https://www.facebook.com/pagename" "6"
+node scripts/facebook_feed.js "https://www.facebook.com/pagename" "6"
 ```
 
 ### Scrape with Vision AI
 ```bash
-node scripts/universal_scraper_vision.js "https://www.facebook.com/pagename" "10"
+node scripts/facebook_feed_vision.js "https://www.facebook.com/pagename" "10"
 ```
 
 ### Facebook Ads Library Discovery
 ```bash
-node scripts/facebook_discovery.js "tên page" "5"
+node scripts/facebook_ads_library.js "tên page" "5"
 ```
 
 ### TikTok Channel Analytics
@@ -118,8 +118,8 @@ Session được lưu ở 2 nơi (đồng bộ tự động):
 
 | Vị trí | Format | Dùng bởi |
 |--------|--------|----------|
-| `.openclaw/fb_session.json` | Playwright storageState JSON | `universal_scraper.js`, `universal_scraper_vision.js` |
-| `browser-data/` | Chromium persistent profile | `facebook_discovery.js`, `facebook_discovery_vision.js` |
+| `.openclaw/fb_session.json` | Playwright storageState JSON | `facebook_feed.js` |
+| `browser-data/` | Chromium persistent profile | `facebook_ads_library.js` |
 
 ### Schema của fb_session.json
 

@@ -17,13 +17,13 @@ Bạn CHỈ thực hiện phân tích, đánh giá, quyết định, đề xuấ
   2. Nếu không, hãy gọi `agent-scraper` chạy script `session_generator.js --check` để kiểm tra trạng thái session hiện tại.
   3. Nếu kết quả trả về báo session **vẫn còn hạn (valid)**: Bạn BẮT BUỘC phải thông báo cho user biết session hiện tại vẫn hoạt động tốt, và yêu cầu user xác nhận (Confirm) xem có thực sự muốn xóa session cũ và tạo lại không. Chỉ khi user gõ "Đồng ý", "Xác nhận", hoặc tương đương thì mới đi tiếp bước 4.
   4. Nếu session **hết hạn (expired)** hoặc user đã xác nhận đồng ý tạo lại: Hãy gọi `agent-scraper` chạy script `session_generator.js --force`.
-  5. Trích xuất đường link Web VNC (thường có định dạng `https://<domain>/browser/` từ kết quả) và gửi ngay cho user kèm hướng dẫn để user click vào tự đăng nhập.
+  5. Trích xuất đường link Web VNC (thường có định dạng `https://<domain>/browser/` từ kết quả) và gửi ngay cho user kèm hướng dẫn để user click vào tự đăng nhập kèm lưu ý hãy sử dụng tài khoản phụ để đề phòng nguy cơ bị khóa tài khoàn.
   6. Ngừng tiến trình xử lý tại đây.
 
 - **Trường hợp thu thập và phân tích dữ liệu đối thủ (Có liên quan đến Facebook):**
-  - **BẮT BUỘC:** TRƯỚC KHI chạy script `universal_scraper.js`, bạn PHẢI yêu cầu `agent-scraper` chạy `session_generator.js --check` để kiểm tra trạng thái của file `.openclaw/fb_session.json`. 
+  - **BẮT BUỘC:** TRƯỚC KHI chạy script `facebook_feed.js`, bạn PHẢI yêu cầu `agent-scraper` chạy `session_generator.js --check` để kiểm tra hạn của session
   - Nếu kết quả trả về là session **đã hết hạn (expired)** hoặc lỗi: BẠN PHẢI ngừng tiến trình lập tức, báo luôn cho user biết session đã hết hạn và hỏi xem họ có muốn bạn chạy script lấy session mới không. Tuyệt đối không được cố chạy script trích xuất khi session đã hết hạn.
-  - Chỉ khi session **còn hạn (valid)**, bạn mới được phép gọi `universal_scraper.js`.
+  - Chỉ khi session **còn hạn (valid)**, bạn mới được phép gọi `facebook_feed.js`.
 
 - **Trường hợp thu thập và phân tích dữ liệu tổng thể (Holistic):** Luôn xử lý yêu cầu theo tiến trình 5 bước sau:
 
@@ -58,8 +58,8 @@ Giao việc cho `agent-scraper` dựa trên phân loại ở Step 1.
 :::
 
 - Nếu là **Holistic Intent**: 
-  1. Gọi `facebook_discovery.js` để quét Ads. Đợi kết quả.
-  2. Tiếp tục gọi `universal_scraper.js` để quét Feed. Đợi kết quả.
+  1. Gọi `facebook_ads_library.js` để quét Ads. Đợi kết quả.
+  2. Tiếp tục gọi `facebook_feed.js` để quét Feed. Đợi kết quả.
   3. Tiếp tục gọi `video_transcript.py` để chuyển nội dung video sang text
 - Nếu là **Single Intent Tiktok**: Chỉ gọi `tiktok/analytic.js` với tham số `uniqueId` để lấy dữ liệu phân tích kênh và danh sách video.
 - Nếu là **Single Intent Tiktok Content**: Gọi `video_transcript.py` với các URL video do user cung cấp.

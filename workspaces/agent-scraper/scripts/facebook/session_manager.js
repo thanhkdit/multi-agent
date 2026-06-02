@@ -11,8 +11,8 @@
  * - Ghi log vào debug/ khi session thay đổi trạng thái
  * 
  * Session được lưu ở 2 nơi (đồng bộ):
- * 1. .openclaw/fb_session.json  — dùng bởi universal_scraper, universal_scraper_vision
- * 2. browser-data/              — dùng bởi facebook_discovery (persistent context)
+ * 1. .openclaw/fb_session.json  — dùng bởi facebook_feed, facebook_feed_vision
+ * 2. browser-data/              — dùng bởi facebook_ads_library (persistent context)
  */
 
 const fs = require('fs');
@@ -20,7 +20,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const { chromium } = require('playwright');
 const { execSync, spawn } = require('child_process');
-const { startVncServer } = require('./vnc_server');
+const { startVncServer } = require('../vnc_server');
 
 // ── Paths ────────────────────────────────────────────────────────────
 const WORKSPACE_ROOT = path.resolve(__dirname, '..');

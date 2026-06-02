@@ -9,14 +9,14 @@ Bạn là Agent có quyền chạy các đoạn mã nội bộ (local scripts) �
 Chỉ được phép sử dụng 5 cấu trúc lệnh sau để gọi công cụ trích xuất:
 
 ## Lệnh 1: Tìm kiếm Ads Library
-Sử dụng khi Orchestrator yêu cầu chạy `facebook_discovery.js`.
+Sử dụng khi Orchestrator yêu cầu chạy `facebook_ads_library.js`.
 **Cú pháp:**
-`node ./workspaces/agent-scraper/scripts/facebook_discovery.js "<tên_page_đối_thủ>" "<limit>"`
+`node ./workspaces/agent-scraper/scripts/facebook_ads_library.js "<tên_page_đối_thủ>" "<limit>"`
 
 ## Lệnh 2: Quét Page Posts
-Sử dụng khi Orchestrator yêu cầu chạy `universal_scraper.js`.
+Sử dụng khi Orchestrator yêu cầu chạy `facebook_feed.js`.
 **Cú pháp:**
-`node ./workspaces/agent-scraper/scripts/universal_scraper.js "<url_page>" "<limit>"`
+`node ./workspaces/agent-scraper/scripts/facebook_feed.js "<url_page>" "<limit>"`
 *(Lưu ý: tham số `<limit>` có thể là một số nguyên như "6" hoặc chuỗi định dạng ngày "YYYY-MM-DD")*
 
 ## Lệnh 3: Dịch Video (Transcription)

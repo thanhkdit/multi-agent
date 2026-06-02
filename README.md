@@ -194,13 +194,13 @@ orchestrator sẽ confirm lại URL với user.
 ## Discovery
 
 ```bash
-node scripts/facebook_discovery.js ads_library_lookup "Bảo Tín Mạnh Hải"
+node scripts/facebook_ads_library.js ads_library_lookup "Bảo Tín Mạnh Hải"
 ```
 
 ## Scraping
 
 ```bash
-node scripts/universal_scraper.js "https://facebook.com/abc" "10" "full_posts"
+node scripts/facebook_feed.js "https://facebook.com/abc" "10" "full_posts"
 ```
 
 ---

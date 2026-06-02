@@ -6,7 +6,7 @@ This workspace has been refactored to use a single, unified scraper that support
 ## Files
 
 ### Core Scraper
-- **`universal_scraper.js`** - Main entry point supporting Facebook, TikTok, Instagram, Twitter, and YouTube
+- **`facebook_feed.js`** - Main entry point supporting Facebook, TikTok, Instagram, Twitter, and YouTube
   - Platform auto-detection from URL
   - Unified session management
   - Modular scraper classes per platform
@@ -28,17 +28,17 @@ The following redundant scripts have been removed:
 
 ### Facebook
 ```bash
-node universal_scraper.js https://www.facebook.com/kinhmateyeplus
+node facebook_feed.js https://www.facebook.com/kinhmateyeplus
 ```
 
 ### TikTok (placeholder - implementation pending)
 ```bash
-node universal_scraper.js https://www.tiktok.com/@username
+node facebook_feed.js https://www.tiktok.com/@username
 ```
 
 ### Instagram (placeholder - implementation pending)
 ```bash
-node universal_scraper.js https://www.instagram.com/username
+node facebook_feed.js https://www.instagram.com/username
 ```
 
 ## Environment Variables
