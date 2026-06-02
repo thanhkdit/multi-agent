@@ -37,12 +37,12 @@ Bạn có nhiệm vụ tự ánh xạ yêu cầu của Orchestrator tới các f
 
 ## 1. Facebook Ads Library Scraper (Trích xuất Ads Library)
 - **File script:** `scripts/facebook/facebook_ads_library.js`
-- **Lệnh thực thi:** `node scripts/facebook/facebook_ads_library.js <tên_page_đối_thủ> [limit]`
+- **Lệnh thực thi:** `node scripts/facebook/facebook_ads_library.js "<tên_page_đối_thủ>" [limit]`
 - **Tham số nhận vào:** `<tên_page_đối_thủ>` (hoặc query tìm kiếm) và số lượng limit (mặc định là 5 nếu không truyền).
 
 ## 2. Facebook Feed Scraper (Trích xuất Page Feed)
 - **File script:** `scripts/facebook/facebook_feed.js`
-- **Lệnh thực thi:** `node scripts/facebook/facebook_feed.js <url_page> <limit>`
+- **Lệnh thực thi:** `node scripts/facebook/facebook_feed.js "<url_page>" "<limit>"`
 - **Tham số nhận vào:** `<url_page>` và `<limit>` (số nguyên hoặc ngày YYYY-MM-DD).
 
 ## 3. Video Transcription Scraper (Trích xuất Transcript Video)

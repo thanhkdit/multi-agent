@@ -49,7 +49,7 @@ Trích xuất và chuẩn bị các tham số. Trở thành một agent "mở":
   - CHỈ KHI user phản hồi ĐỒNG Ý hoặc cung cấp lại thông tin chính xác hơn thì bạn mới được chuyển sang STEP 3 (Delegate).
 
 ## STEP 3 — DELEGATE & ANTI-LOOP
-Giao việc cho `agent-scraper` dựa trên phân loại ở Step 1. Bạn chỉ truyền đạt tên công cụ logic và các tham số tương ứng, `agent-scraper` chịu trách nhiệm tự tìm đường dẫn file script và chạy chính xác.
+Giao việc cho `agent-scraper` dựa trên phân loại ở Step 1. Bạn chỉ truyền đạt tên công cụ logic và các tham số theo đúng định dạng ví dụ (ví dụ `params: ["TPBank"]` hoặc `params: ["https://www.facebook.com/TPBank./", "6"]`), `agent-scraper` chịu trách nhiệm tự tìm đường dẫn file script và chạy chính xác.
 
 :::caution[Quy tắc Chống Lặp (Anti-Loop Rule) & Ngoại lệ]
 - BẠN BẮT BUỘC phải ghi nhớ các lệnh đã gọi.

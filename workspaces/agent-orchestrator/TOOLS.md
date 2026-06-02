@@ -21,9 +21,9 @@ Bạn phải quản lý tiến trình thực thi cực kỳ chặt chẽ.
 ## 1. Cơ chế tuần tự (Sequential Execution)
 Với các yêu cầu "Holistic/Strategy", bạn thực thi tuần tự:
 - **Chuẩn bị:** (Tùy chọn) Gọi `web_search` để lấy overview về đối thủ hoặc chốt URL/Tên chuẩn.
-- **Gọi Lần 1:** Delegate `agent-scraper` với payload `{script: "facebook_ads_library.js", params: ["<tên_page>"]}`.
+- **Gọi Lần 1:** Delegate `agent-scraper` với payload `{script: "facebook_ads_library.js", params: ["<tên_page>"]}`. (Ví dụ chuẩn: `params: ["TPBank"]`).
 - *Chờ kết quả.*
-- **Gọi Lần 2:** Delegate `agent-scraper` với payload `{script: "facebook_feed.js", params: ["<url_page>", "<limit>"]}`. (Lưu ý: tự suy nghĩ limit phù hợp, nếu user không chỉ định, tối đa là 6).
+- **Gọi Lần 2:** Delegate `agent-scraper` với payload `{script: "facebook_feed.js", params: ["<url_page>", "<limit>"]}`. (Ví dụ chuẩn: `params: ["https://www.facebook.com/TPBank./", "6"]`. Lưu ý: tự suy nghĩ limit phù hợp, nếu user không chỉ định, tối đa là 6).
 - *Chờ kết quả.*
 - **Gọi Lần 3:** Delegate `agent-scraper` với payload `{script: "video_transcript.py", params: ["<url_video>", "<url_video>", "<url_video>", ...]}`.
 - *Chờ kết quả.*

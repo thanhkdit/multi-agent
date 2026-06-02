@@ -12,12 +12,13 @@ Chỉ được phép sử dụng 5 cấu trúc lệnh sau để gọi công cụ
 Sử dụng khi Orchestrator yêu cầu chạy `facebook_ads_library.js`.
 **Cú pháp:**
 `node scripts/facebook/facebook_ads_library.js "<tên_page_đối_thủ>" "<limit>"`
+*(Ví dụ chuẩn: `node scripts/facebook/facebook_ads_library.js "TPBank" "5"`)*
 
 ## Lệnh 2: Quét Page Posts
 Sử dụng khi Orchestrator yêu cầu chạy `facebook_feed.js`.
 **Cú pháp:**
 `node scripts/facebook/facebook_feed.js "<url_page>" "<limit>"`
-*(Lưu ý: tham số `<limit>` có thể là một số nguyên như "6" hoặc chuỗi định dạng ngày "YYYY-MM-DD")*
+*(Ví dụ chuẩn: `node scripts/facebook/facebook_feed.js "https://www.facebook.com/TPBank./" 6`. Tham số `<limit>` có thể là một số nguyên như "6" hoặc chuỗi định dạng ngày "YYYY-MM-DD".)*
 
 ## Lệnh 3: Dịch Video (Transcription)
 Sử dụng khi Orchestrator yêu cầu chạy `video_transcript.py` để dịch/bóc băng nội dung video (hỗ trợ TikTok, YouTube, Facebook Reels...).
