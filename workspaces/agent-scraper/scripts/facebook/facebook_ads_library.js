@@ -3,15 +3,15 @@ const fs = require("fs");
 const path = require("path");
 const { chromium } = require("playwright");
 
-const USER_DATA_DIR = path.join(__dirname, "../browser-data");
+const USER_DATA_DIR = path.join(__dirname, "../../browser-data");
 
 require("dotenv").config({
   path: path.join(__dirname, "../../.env")
 });
 
 const CONFIG = {
-  DEBUG_DIR: path.join(__dirname, "../debug"),
-  SCREENSHOT_DIR: path.join(__dirname, "../screenshots"),
+  DEBUG_DIR: path.join(__dirname, "../../debug"),
+  SCREENSHOT_DIR: path.join(__dirname, "../../screenshots"),
 
   DEFAULT_LIMIT: 5,
 

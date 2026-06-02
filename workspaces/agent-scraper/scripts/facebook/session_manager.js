@@ -245,10 +245,32 @@ function getServerIP() {
  * @returns {Promise<{success: boolean, url?: string, status?: object}>}
  */
 async function startRemoteLoginSession(opts = {}) {
+  // Dọn dẹp các tiến trình Chromium cũ đang chạy ngầm hoặc chiếm dụng port/profile
+  try {
+    if (process.platform === 'linux') {
+      execSync(`fuser -k ${CDP_PORT}/tcp 2>/dev/null || true`, { stdio: 'ignore' });
+      execSync(`pkill -f "remote-debugging-port=${CDP_PORT}" 2>/dev/null || true`, { stdio: 'ignore' });
+    }
+  } catch (_) {}
+
   ensureDirs();
 
   // Kiểm tra session hiện tại
-  if (!opts.force) {
+  if (opts.force) {
+    logSession('info', 'Bắt buộc login lại (--force). Đang xóa cache trình duyệt và session cũ...');
+    try {
+      if (fs.existsSync(SESSION_FILE)) {
+        fs.rmSync(SESSION_FILE, { force: true });
+      }
+      if (fs.existsSync(BROWSER_DATA_DIR)) {
+        fs.rmSync(BROWSER_DATA_DIR, { recursive: true, force: true });
+      }
+      logSession('success', 'Đã xóa sạch cache trình duyệt và session cũ.');
+    } catch (e) {
+      logSession('warn', 'Không thể xóa sạch hoàn toàn cache: ' + e.message);
+    }
+    ensureDirs();
+  } else {
     const status = checkSessionStatus();
     if (status.status === 'valid') {
       logSession('info', 'Session vẫn valid, không cần login lại.');

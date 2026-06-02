@@ -38,6 +38,10 @@ async function main() {
     process.exit(status.status === 'valid' ? 0 : 1);
   }
 
+  if (isForce) {
+    console.log('🔄 Đang chạy ở chế độ Force: Xóa cache trình duyệt và yêu cầu đăng nhập lại...');
+  }
+
   const result = await startRemoteLoginSession({ force: isForce });
 
   if (result.success) {
