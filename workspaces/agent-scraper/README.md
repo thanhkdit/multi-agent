@@ -31,12 +31,12 @@ TIKTOK_RAPIDAPI_KEYS=key1,key2,key3
 
 ## Session Management (Quan trọng!)
 
-Session Facebook được quản lý tập trung bởi `scripts/session_manager.js` và lưu tại `.openclaw/fb_session.json`.
+Session Facebook được quản lý tập trung bởi `scripts/facebook/session_manager.js` và lưu tại `.openclaw/fb_session.json`.
 
 ### Kiểm tra trạng thái session
 
 ```bash
-node scripts/session_generator.js --check
+node scripts/facebook/session_generator.js --check
 # hoặc
 npm run session:check
 ```
@@ -52,7 +52,7 @@ sudo apt-get install -y xvfb
 
 2. Chạy session generator (hoặc scraper tự động gọi):
 ```bash
-node scripts/session_generator.js
+node scripts/facebook/session_generator.js
 # hoặc
 npm run session:login
 ```
@@ -71,7 +71,7 @@ npm run session:login
 ### Renew session khi hết hạn
 
 ```bash
-node scripts/session_generator.js --force
+node scripts/facebook/session_generator.js --force
 # hoặc
 npm run session:renew
 ```
@@ -89,17 +89,12 @@ LOGIN_TIMEOUT_MS=600000
 
 ### Scrape Facebook Page Posts
 ```bash
-node scripts/facebook_feed.js "https://www.facebook.com/pagename" "6"
-```
-
-### Scrape with Vision AI
-```bash
-node scripts/facebook_feed_vision.js "https://www.facebook.com/pagename" "10"
+node scripts/facebook/facebook_feed.js "https://www.facebook.com/pagename" "6"
 ```
 
 ### Facebook Ads Library Discovery
 ```bash
-node scripts/facebook_ads_library.js "tên page" "5"
+node scripts/facebook/facebook_ads_library.js "tên page" "5"
 ```
 
 ### TikTok Channel Analytics
@@ -172,10 +167,10 @@ Session được lưu ở 2 nơi (đồng bộ tự động):
 ### Session hết hạn
 ```bash
 # Kiểm tra trạng thái
-node scripts/session_generator.js --check
+node scripts/facebook/session_generator.js --check
 
 # Renew session
-node scripts/session_generator.js --force
+node scripts/facebook/session_generator.js --force
 ```
 
 ### Không thể mở browser trên server
@@ -187,11 +182,10 @@ sudo apt-get install -y xvfb
 which Xvfb
 ```
 
-### Scraper báo "Session đã hết hạn"
-Scraper sẽ tự động mở browser trên server và cấp link (CDP) cho bạn login.
+### Scraper sẽ tự động mở browser trên server và cấp link (CDP) cho bạn login.
 Tuy nhiên, nếu bạn muốn renew thủ công trước khi chạy scraper:
 ```bash
-node scripts/session_generator.js --force
+node scripts/facebook/session_generator.js --force
 ```
 
 ### Debug logs

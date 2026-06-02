@@ -11,12 +11,12 @@ Chỉ được phép sử dụng 5 cấu trúc lệnh sau để gọi công cụ
 ## Lệnh 1: Tìm kiếm Ads Library
 Sử dụng khi Orchestrator yêu cầu chạy `facebook_ads_library.js`.
 **Cú pháp:**
-`node ./workspaces/agent-scraper/scripts/facebook_ads_library.js "<tên_page_đối_thủ>" "<limit>"`
+`node ./workspaces/agent-scraper/scripts/facebook/facebook_ads_library.js "<tên_page_đối_thủ>" "<limit>"`
 
 ## Lệnh 2: Quét Page Posts
 Sử dụng khi Orchestrator yêu cầu chạy `facebook_feed.js`.
 **Cú pháp:**
-`node ./workspaces/agent-scraper/scripts/facebook_feed.js "<url_page>" "<limit>"`
+`node ./workspaces/agent-scraper/scripts/facebook/facebook_feed.js "<url_page>" "<limit>"`
 *(Lưu ý: tham số `<limit>` có thể là một số nguyên như "6" hoặc chuỗi định dạng ngày "YYYY-MM-DD")*
 
 ## Lệnh 3: Dịch Video (Transcription)
@@ -35,13 +35,13 @@ Sử dụng khi Orchestrator yêu cầu chạy phân tích kênh TikTok bằng `
 Sử dụng khi cần kiểm tra hoặc renew session Facebook.
 
 **Kiểm tra trạng thái session:**
-`node ./workspaces/agent-scraper/scripts/session_generator.js --check`
+`node ./workspaces/agent-scraper/scripts/facebook/session_generator.js --check`
 
 **Login lại (chỉ khi session hết hạn):**
-`node ./workspaces/agent-scraper/scripts/session_generator.js`
+`node ./workspaces/agent-scraper/scripts/facebook/session_generator.js`
 
 **Bắt buộc login lại (force renew):**
-`node ./workspaces/agent-scraper/scripts/session_generator.js --force`
+`node ./workspaces/agent-scraper/scripts/facebook/session_generator.js --force`
 *(Lưu ý: Script sẽ tự mở browser trên server (Xvfb + VNC), user kết nối VNC để login thủ công, session được lưu tự động)*
 
 ---
