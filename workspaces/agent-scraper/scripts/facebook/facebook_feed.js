@@ -1,5 +1,5 @@
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -7,11 +7,11 @@ const axios = require('axios');
 const sessionManager = require('./session_manager');
 
 const CONFIG = {
-  SESSION_DIR: path.join(__dirname, '../.openclaw'),
-  ERROR_LOG: path.join(__dirname, '../.openclaw', 'scraper_errors.log'),
-  IMAGE_DIR: path.join(__dirname, '../images'),
-  SCREENSHOT_DIR: path.join(__dirname, '../screenshots'),
-  DEBUG_DIR: path.join(__dirname, '../debug')
+  SESSION_DIR: path.join(__dirname, '../../.openclaw'),
+  ERROR_LOG: path.join(__dirname, '../../.openclaw', 'scraper_errors.log'),
+  IMAGE_DIR: path.join(__dirname, '../../images'),
+  SCREENSHOT_DIR: path.join(__dirname, '../../screenshots'),
+  DEBUG_DIR: path.join(__dirname, '../../debug')
 };
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -44,9 +44,9 @@ function clearFilesByExtensions(dirPath, extensions = []) {
 
 function cleanupImages() {
   const dirs = [
-    path.join(__dirname, '../debug'),
-    path.join(__dirname, '../images'),
-    path.join(__dirname, '../screenshots')
+    path.join(__dirname, '../../debug'),
+    path.join(__dirname, '../../images'),
+    path.join(__dirname, '../../screenshots')
   ];
   for (const dir of dirs) {
     if (fs.existsSync(dir)) {

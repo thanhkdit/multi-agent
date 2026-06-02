@@ -17,13 +17,13 @@
 
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const { chromium } = require('playwright');
 const { execSync, spawn } = require('child_process');
 const { startVncServer } = require('../vnc_server');
 
 // ── Paths ────────────────────────────────────────────────────────────
-const WORKSPACE_ROOT = path.resolve(__dirname, '..');
+const WORKSPACE_ROOT = path.resolve(__dirname, '../..');
 const SESSION_DIR = path.join(WORKSPACE_ROOT, '.openclaw');
 const SESSION_FILE = path.join(SESSION_DIR, 'fb_session.json');
 const BROWSER_DATA_DIR = path.join(WORKSPACE_ROOT, 'browser-data');
@@ -292,7 +292,6 @@ async function startRemoteLoginSession(opts = {}) {
       locale: 'vi-VN',
       timezoneId: 'Asia/Ho_Chi_Minh',
       args: [
-        '--headless=new',
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',

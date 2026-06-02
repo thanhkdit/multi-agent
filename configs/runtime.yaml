@@ -2,7 +2,3 @@ agent_runtime:
   disable_default_system_prompt: true
 gateway:
   bind: lan
-tools:
-  sessions_spawn:
-    attachments:
-      enabled: true

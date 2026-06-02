@@ -3,15 +3,15 @@ const fs = require("fs");
 const path = require("path");
 const { chromium } = require("playwright");
 
-const USER_DATA_DIR = path.join(__dirname, "..", "browser-data");
+const USER_DATA_DIR = path.join(__dirname, "../browser-data");
 
 require("dotenv").config({
-  path: path.join(__dirname, "../.env")
+  path: path.join(__dirname, "../../.env")
 });
 
 const CONFIG = {
-  DEBUG_DIR: path.join(__dirname, "..", "debug"),
-  SCREENSHOT_DIR: path.join(__dirname, "..", "screenshots"),
+  DEBUG_DIR: path.join(__dirname, "../debug"),
+  SCREENSHOT_DIR: path.join(__dirname, "../screenshots"),
 
   DEFAULT_LIMIT: 5,
 
@@ -74,29 +74,9 @@ async function createBrowser() {
 
 function cleanupImages() {
   const dirs = [
-    path.join(__dirname, "../debug"),
-    path.join(__dirname, "../images"),
-    path.join(__dirname, "../screenshots")
-  ];
-
-  for (const dir of dirs) {
-    if (!fs.existsSync(dir)) continue;
-
-    for (const file of fs.readdirSync(dir)) {
-      if (/\.(jpg|jpeg|png|json)$/i.test(file)) {
-        try {
-          fs.unlinkSync(path.join(dir, file));
-        } catch (_) {}
-      }
-    }
-  }
-}
-
-function cleanupImages() {
-  const dirs = [
-    path.join(__dirname, '../debug'),
-    path.join(__dirname, '../images'),
-    path.join(__dirname, '../screenshots')
+    path.join(__dirname, '../../debug'),
+    path.join(__dirname, '../../images'),
+    path.join(__dirname, '../../screenshots')
   ];
   for (const dir of dirs) {
     if (fs.existsSync(dir)) {
