@@ -47,7 +47,7 @@ module.exports = {
   MAX_ATTEMPTS: 3,
 
   // Polling
-  POLL_INTERVAL_MS: 3_000,         // Check job status every 3s
+  POLL_INTERVAL_MS: 5_000,         // Check job status every 5s
   POLL_MAX_WAIT_MS: 660_000,       // Max 11 minutes polling
 
   // Task registry: maps task_type → script execution info
