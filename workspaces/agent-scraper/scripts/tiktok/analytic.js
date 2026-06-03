@@ -51,7 +51,7 @@ async function fetchWithRetry(url) {
 
       return data;
     } catch (err) {
-      console.warn(`[WARN] API key index ${i} failed: ${err.message}. Trying next...`);
+      // console.warn(`[WARN] API key index ${i} failed: ${err.message}. Trying next...`);
       lastError = err;
     }
   }
@@ -67,7 +67,7 @@ const LATEST_POSTS_COUNT = 3;
  */
 async function getUserInfo(uniqueId) {
   const url = `${BASE_URL}/user/info?uniqueId=${encodeURIComponent(uniqueId)}`;
-  console.log(`[INFO] Fetching user info for: ${uniqueId}`);
+  // console.log(`[INFO] Fetching user info for: ${uniqueId}`);
 
   const data = await fetchWithRetry(url);
 
@@ -84,7 +84,7 @@ async function getUserInfo(uniqueId) {
  */
 async function getUserListVideo(secUid, count = 35) {
   const url = `${BASE_URL}/user/posts?secUid=${encodeURIComponent(secUid)}&count=${count}&cursor=0`;
-  console.log(`[INFO] Fetching user video list (count=${count})`);
+  // console.log(`[INFO] Fetching user video list (count=${count})`);
 
   const data = await fetchWithRetry(url);
 
@@ -101,7 +101,7 @@ async function getUserListVideo(secUid, count = 35) {
  */
 async function getVideoDetail(videoId) {
   const url = `${BASE_URL}/post/detail?videoId=${encodeURIComponent(videoId)}`;
-  console.log(`[INFO] Fetching video detail for: ${videoId}`);
+  // console.log(`[INFO] Fetching video detail for: ${videoId}`);
 
   const data = await fetchWithRetry(url);
 
@@ -185,7 +185,7 @@ async function analyzeTikTokChannel(uniqueId) {
   // 1. Lấy thông tin user
   const userInfoResponse = await getUserInfo(uniqueId);
   const channelInfo = extractChannelInfo(userInfoResponse);
-  console.log(`[OK] Channel info fetched: ${channelInfo.title}`);
+  // console.log(`[OK] Channel info fetched: ${channelInfo.title}`);
 
   // 2. Lấy secUid để gọi API list video
   const secUid = userInfoResponse?.userInfo?.user?.secUid;
@@ -198,7 +198,7 @@ async function analyzeTikTokChannel(uniqueId) {
   const itemList = listVideoResponse?.data?.itemList || [];
 
   if (itemList.length === 0) {
-    console.log("[WARN] No videos found for this user");
+    // console.log("[WARN] No videos found for this user");
   }
 
   // 4. Lấy 3 video mới nhất (sort theo createTime giảm dần)
@@ -206,7 +206,7 @@ async function analyzeTikTokChannel(uniqueId) {
     .sort((a, b) => (b.createTime || 0) - (a.createTime || 0))
     .slice(0, LATEST_POSTS_COUNT);
 
-  console.log(`[INFO] Found ${latestItems.length} latest video(s), fetching details...`);
+  // console.log(`[INFO] Found ${latestItems.length} latest video(s), fetching details...`);
 
   // 5. Gọi API get video detail cho từng video
   const latestPosts = [];
@@ -214,7 +214,7 @@ async function analyzeTikTokChannel(uniqueId) {
   for (const item of latestItems) {
     const videoId = item.id;
     if (!videoId) {
-      console.log("[WARN] Skipping item without video ID");
+      // console.log("[WARN] Skipping item without video ID");
       continue;
     }
 
@@ -223,7 +223,7 @@ async function analyzeTikTokChannel(uniqueId) {
       if (!firstDetailResponse) firstDetailResponse = detailResponse;
       const videoDetail = extractVideoDetail(detailResponse, uniqueId);
       latestPosts.push(videoDetail);
-      console.log(`[OK] Video detail fetched: ${videoId}`);
+      // console.log(`[OK] Video detail fetched: ${videoId}`);
     } catch (err) {
       console.error(`[ERROR] Failed to fetch detail for video ${videoId}: ${err.message}`);
     }
@@ -234,7 +234,7 @@ async function analyzeTikTokChannel(uniqueId) {
     const authorCreateTime = getAuthorCreateTimeFromVideoDetail(firstDetailResponse);
     if (authorCreateTime) {
       channelInfo.channelCreatedAt = new Date(authorCreateTime * 1000).toISOString();
-      console.log(`[OK] Channel created at: ${channelInfo.channelCreatedAt}`);
+      // console.log(`[OK] Channel created at: ${channelInfo.channelCreatedAt}`);
     }
   }
 
@@ -277,14 +277,14 @@ function cleanFolderName(name) {
     const result = await analyzeTikTokChannel(uniqueId);
 
     // Output JSON
-    console.log("\n--- RESULT ---");
+    // console.log("\n--- RESULT ---");
     console.log(JSON.stringify(result, null, 2));
 
     if (result && result.channel) {
       const nameSource = competitorName || result.channel.nickname || result.channel.title || result.channel.uniqueId || 'default';
       const folderName = cleanFolderName(nameSource);
       if (folderName) {
-        const resultDir = path.join(__dirname, '../../result', folderName);
+        const resultDir = path.join(__dirname, '../../../shared/result', folderName);
         if (!fs.existsSync(resultDir)) {
           fs.mkdirSync(resultDir, { recursive: true });
         }

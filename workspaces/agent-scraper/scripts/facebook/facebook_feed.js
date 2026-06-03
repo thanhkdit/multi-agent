@@ -688,7 +688,7 @@ async function universalScrape(url, limitStr = '6', competitorName) {
       const folderSource = competitorName || (result.posts && result.posts.length > 0 && result.posts[0].header) || (result.page_info && result.page_info.name) || 'default';
       const folderName = cleanFolderName(folderSource);
       if (folderName) {
-        const resultDir = path.join(__dirname, '../../result', folderName);
+        const resultDir = path.join(__dirname, '../../../shared/result', folderName);
         ensureDir(resultDir);
         const resultFilePath = path.join(resultDir, 'feeds.json');
         fs.writeFileSync(resultFilePath, JSON.stringify(result, null, 2));

@@ -149,7 +149,7 @@ function output(data, competitorName) {
     const headerName = competitorName || firstItem.page_name || firstItem.header || data.selected_page_name || data.query || 'default';
     const folderName = cleanFolderName(headerName);
     if (folderName) {
-      const resultDir = path.join(__dirname, "../../result", folderName);
+      const resultDir = path.join(__dirname, "../../../shared/result", folderName);
       if (!fs.existsSync(resultDir)) {
         fs.mkdirSync(resultDir, { recursive: true });
       }
@@ -542,7 +542,7 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT, compe
       `&sort_data[direction]=desc` +
       `&sort_data[mode]=total_impressions`;
 
-    console.log(`[ADS LIBRARY URL] ${adsUrl}`);
+    // console.log(`[ADS LIBRARY URL] ${adsUrl}`);
 
     page.on("response", (response) => {
       if (!isTargetGraphqlResponse(response)) return;
@@ -552,7 +552,7 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT, compe
           const text = await response.text();
           rawResponses.push(text);
         } catch (err) {
-          console.log(`[GRAPHQL READ ERROR] ${err.message}`);
+          // console.log(`[GRAPHQL READ ERROR] ${err.message}`);
         }
       })();
 
@@ -569,13 +569,13 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT, compe
     const searchInput = await findSearchInputByValue(page, query);
 
     if (!searchInput) {
-      await page.screenshot({
-        path: path.join(
-          CONFIG.DEBUG_DIR,
-          `ads_library_no_input_${safeFileName(query)}_${Date.now()}.png`
-        ),
-        fullPage: true
-      });
+      // await page.screenshot({
+      //   path: path.join(
+      //     CONFIG.DEBUG_DIR,
+      //     `ads_library_no_input_${safeFileName(query)}_${Date.now()}.png`
+      //   ),
+      //   fullPage: true
+      // });
 
       throw new Error("Cannot find search input with value=query");
     }
@@ -593,7 +593,7 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT, compe
 
     await Promise.allSettled(pendingResponseTasks);
 
-    console.log(`[DEBUG] Total GraphQL Responses: ${rawResponses.length}`);
+    // console.log(`[DEBUG] Total GraphQL Responses: ${rawResponses.length}`);
 
     for (const responseText of rawResponses) {
       if (extractedAds.length >= limit) break;
@@ -612,8 +612,8 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT, compe
       if (extractedAds.length >= limit) break;
     }
 
-    console.log(`[DEBUG] Extracted Ads Count: ${seenArchiveIds.size}`);
-    console.log(`[DEBUG] Returned Ads Count: ${Math.min(extractedAds.length, limit)}`);
+    // console.log(`[DEBUG] Extracted Ads Count: ${seenArchiveIds.size}`);
+    // console.log(`[DEBUG] Returned Ads Count: ${Math.min(extractedAds.length, limit)}`);
 
 
     const selectedPageUrl = page.url();

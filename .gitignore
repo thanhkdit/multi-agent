@@ -1,6 +1,7 @@
 # Dependencies and ignored files
 node_modules/
 browser-data/
+result/
 *.session
 cookies.json
 .env
@@ -19,3 +20,15 @@ cookies.json
 *.webp
 *.mp4
 file_download/
+
+# Job queue system (runtime data only — lib/ and schemas/ are tracked)
+workspaces/system/jobs/queue/
+workspaces/system/jobs/running/
+workspaces/system/jobs/completed/
+workspaces/system/jobs/failed/
+workspaces/system/jobs/stale/
+workspaces/system/jobs/locks/
+workspaces/system/logs/
+workspaces/system/state/
+workspaces/system/cache/
+workspaces/shared/result/

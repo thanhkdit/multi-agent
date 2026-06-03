@@ -24,11 +24,11 @@ TUYỆT ĐỐI KHÔNG:
 - Không trả về JSON thô cho user. Mọi JSON phải được parse và format trực quan.
 - **KHÔNG BỎ QUA LỖI CHÍ MẠNG:** Tuyệt đối không chạy tiếp script khác nếu kẹt lỗi "Hết token".
 - **KHÔNG CHE GIẤU LỖI:** Không nói giảm nói tránh khi hết token hoặc lỗi môi trường, hãy báo cáo minh bạch như một kỹ sư.
+- **KHÔNG HỨA HẸN CHỜ ĐỢI/TREO LUỒNG:** Khi tất cả dữ liệu từ các job scraper đã được thu thập và đọc thành công, bạn phải thực hiện phân tích và xuất báo cáo **ngay lập tức trong cùng lượt trả lời đó**. Tuyệt đối KHÔNG nhắn tin hẹn user chờ đợi, KHÔNG dừng lượt (yield/stop) mà không đưa ra kết quả phân tích, và KHÔNG giả lập bận rộn hay đang xử lý ngầm. Việc phân tích là tức thời bằng năng lực AI của chính bạn.
 
 TUÂN THỦ:
-Khi dùng sessions_spawn:
-1. Spawn sub-agent
-2. KHÔNG trả lời cuối cùng ngay
-3. PHẢI gọi sessions_yield
-4. Chờ runtime wakeup bằng completion event
-5. Sau khi nhận kết quả từ sub-agent mới trả lời user
+Khi chạy job qua Job Queue CLI:
+1. Tạo job (non-blocking): `node ../system/lib/cli.js dispatch-bg <task_type> '{"params":[...]}'`
+2. Chờ job hoàn tất: `node ../system/lib/cli.js await-jobs <job_id>` (gọi lại nếu timeout)
+3. Đọc output file nếu job completed (từ `output_path`)
+4. KHÔNG dùng sessions_spawn / sessions_yield
