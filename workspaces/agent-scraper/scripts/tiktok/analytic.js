@@ -12,6 +12,7 @@
  */
 
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const RAPIDAPI_HOST = "tiktok-api23.p.rapidapi.com";
@@ -247,12 +248,27 @@ async function analyzeTikTokChannel(uniqueId) {
   return result;
 }
 
+function cleanFolderName(name) {
+  if (!name) return 'default';
+  return name
+    .toLowerCase()
+    .replace(/đ/g, 'd')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s_]/g, '')
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
 // --- Main ---
 (async () => {
   const uniqueId = process.argv[2];
+  const competitorName = process.argv[3];
 
   if (!uniqueId) {
-    console.error("Usage: node analytic.js <uniqueId>");
+    console.error("Usage: node analytic.js <uniqueId> [competitorName]");
     console.error("Example: node analytic.js taylorswift");
     process.exit(1);
   }
@@ -263,6 +279,19 @@ async function analyzeTikTokChannel(uniqueId) {
     // Output JSON
     console.log("\n--- RESULT ---");
     console.log(JSON.stringify(result, null, 2));
+
+    if (result && result.channel) {
+      const nameSource = competitorName || result.channel.nickname || result.channel.title || result.channel.uniqueId || 'default';
+      const folderName = cleanFolderName(nameSource);
+      if (folderName) {
+        const resultDir = path.join(__dirname, '../../result', folderName);
+        if (!fs.existsSync(resultDir)) {
+          fs.mkdirSync(resultDir, { recursive: true });
+        }
+        const resultFilePath = path.join(resultDir, 'tiktok.json');
+        fs.writeFileSync(resultFilePath, JSON.stringify(result, null, 2));
+      }
+    }
   } catch (err) {
     console.error(`[FATAL] ${err.message}`);
     process.exit(1);

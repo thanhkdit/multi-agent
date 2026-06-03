@@ -11,14 +11,14 @@ Chỉ được phép sử dụng 5 cấu trúc lệnh sau để gọi công cụ
 ## Lệnh 1: Tìm kiếm Ads Library
 Sử dụng khi Orchestrator yêu cầu chạy `facebook_ads_library.js`.
 **Cú pháp:**
-`node scripts/facebook/facebook_ads_library.js "<tên_page_đối_thủ>" "<limit>"`
-*(Ví dụ chuẩn: `node scripts/facebook/facebook_ads_library.js "TPBank" "5"`)*
+`node scripts/facebook/facebook_ads_library.js "<tên_page_đối_thủ>" "<limit>" "[competitorName]"`
+*(Ví dụ chuẩn: `node scripts/facebook/facebook_ads_library.js "TPBank" "5" "TPBank"`)*
 
 ## Lệnh 2: Quét Page Posts
 Sử dụng khi Orchestrator yêu cầu chạy `facebook_feed.js`.
 **Cú pháp:**
-`node scripts/facebook/facebook_feed.js "<url_page>" "<limit>"`
-*(Ví dụ chuẩn: `node scripts/facebook/facebook_feed.js "https://www.facebook.com/TPBank./" 6`. Tham số `<limit>` có thể là một số nguyên như "6" hoặc chuỗi định dạng ngày "YYYY-MM-DD".)*
+`node scripts/facebook/facebook_feed.js "<url_page>" "<limit>" "[competitorName]"`
+*(Ví dụ chuẩn: `node scripts/facebook/facebook_feed.js "https://www.facebook.com/TPBank./" 6 "TPBank"`. Tham số `<limit>` có thể là một số nguyên như "6" hoặc chuỗi định dạng ngày "YYYY-MM-DD".)*
 
 ## Lệnh 3: Dịch Video (Transcription)
 Sử dụng khi Orchestrator yêu cầu chạy `video_transcript.py` để dịch/bóc băng nội dung video (hỗ trợ TikTok, YouTube, Facebook Reels...).
@@ -29,8 +29,8 @@ Sử dụng khi Orchestrator yêu cầu chạy `video_transcript.py` để dịc
 ## Lệnh 4: Phân tích Kênh TikTok
 Sử dụng khi Orchestrator yêu cầu chạy phân tích kênh TikTok bằng `tiktok/analytic.js`.
 **Cú pháp:**
-`node scripts/tiktok/analytic.js "<uniqueId>"`
-*(Lưu ý: tham số `<uniqueId>` là ID của kênh TikTok, ví dụ: "realpewpew")*
+`node scripts/tiktok/analytic.js "<uniqueId>" "[competitorName]"`
+*(Ví dụ chuẩn: `node scripts/tiktok/analytic.js "realpewpew" "PewPew"`)*
 
 ## Lệnh 5: Quản lý Session Facebook
 Sử dụng khi cần kiểm tra hoặc renew session Facebook.

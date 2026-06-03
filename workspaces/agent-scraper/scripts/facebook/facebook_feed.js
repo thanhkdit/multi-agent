@@ -196,6 +196,20 @@ function sortPostsByTime(posts) {
   });
 }
 
+function cleanFolderName(name) {
+  if (!name) return 'default';
+  return name
+    .toLowerCase()
+    .replace(/đ/g, 'd')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s_]/g, '')
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
 class AIHelper {
   constructor() {
     this.apiKey = process.env.NINEROUTER_API_KEY;
@@ -345,11 +359,6 @@ QUAN TRỌNG:
 
           let content = response.data.choices?.[0]?.message?.content || '';
 
-          fs.writeFileSync(
-            path.join(CONFIG.DEBUG_DIR, `ai_raw_${Date.now()}_${i}.txt`),
-            content
-          );
-
           content = content
             .replace(/```json/gi, '')
             .replace(/```/g, '')
@@ -372,13 +381,6 @@ QUAN TRỌNG:
           break;
         } catch (err) {
           // console.log(`❌ [AI Chunk Error] ${err.message}`);
-
-          if (retry === 2) {
-            fs.writeFileSync(
-              path.join(CONFIG.DEBUG_DIR, `ai_error_${Date.now()}_${i}.txt`),
-              err.stack || err.message
-            );
-          }
 
           await sleep(1500);
         }
@@ -470,6 +472,7 @@ class FacebookScraper {
     const screenshotPath = path.join(CONFIG.IMAGE_DIR, `page_info_${Date.now()}.jpg`);
     await page.screenshot({ path: screenshotPath });
     const imageBuffer = fs.readFileSync(screenshotPath);
+    try { fs.unlinkSync(screenshotPath); } catch (_) {}
 
     const prompt = 'Phân tích ảnh lấy thông tin page Facebook. Trả JSON: {"name":"","followers":"","likes":"","description":""}';
     const aiData = await ai.analyzeImage(imageBuffer, prompt, true);
@@ -635,11 +638,6 @@ class FacebookScraper {
         posts: finalPosts
       };
 
-      fs.writeFileSync(
-        path.join(CONFIG.SESSION_DIR, 'temp_posts.json'),
-        JSON.stringify(finalPosts, null, 2)
-      );
-
       return result;
     } catch (err) {
       await page.close().catch(() => {});
@@ -648,7 +646,7 @@ class FacebookScraper {
   }
 }
 
-async function universalScrape(url, limitStr = '6') {
+async function universalScrape(url, limitStr = '6', competitorName) {
   detectPlatform(url);
 
   let status = sessionManager.checkSessionStatus();
@@ -685,15 +683,19 @@ async function universalScrape(url, limitStr = '6') {
     const scraper = new FacebookScraper(context);
     const result = await scraper.scrape(url, limitStr, false);
     console.log(JSON.stringify(result, null, 2));
+
+    if (result) {
+      const folderSource = competitorName || (result.posts && result.posts.length > 0 && result.posts[0].header) || (result.page_info && result.page_info.name) || 'default';
+      const folderName = cleanFolderName(folderSource);
+      if (folderName) {
+        const resultDir = path.join(__dirname, '../../result', folderName);
+        ensureDir(resultDir);
+        const resultFilePath = path.join(resultDir, 'feeds.json');
+        fs.writeFileSync(resultFilePath, JSON.stringify(result, null, 2));
+      }
+    }
   } catch (err) {
     logError(err.message);
-    let partialPosts = [];
-    const tempFile = path.join(CONFIG.SESSION_DIR, 'temp_posts.json');
-    if (fs.existsSync(tempFile)) {
-      try {
-        partialPosts = JSON.parse(fs.readFileSync(tempFile, 'utf8'));
-      } catch (e) {}
-    }
   } finally {
     await browser.close();
   }
@@ -701,6 +703,7 @@ async function universalScrape(url, limitStr = '6') {
 
 const targetUrl = process.argv[2];
 const targetLimit = process.argv[3] || '6';
+const competitorName = process.argv[4];
 
 if (!targetUrl) {
   // console.log(JSON.stringify({ status: 'error', error: 'Missing URL' }));
@@ -716,4 +719,4 @@ clearFilesByExtensions(CONFIG.DEBUG_DIR, ['.json', '.txt']);
 clearFilesByExtensions(CONFIG.IMAGE_DIR, ['.jpg', '.jpeg', '.png', '.webp']);
 clearFilesByExtensions(CONFIG.SCREENSHOT_DIR, ['.jpg', '.jpeg', '.png', '.webp']);
 
-universalScrape(targetUrl, targetLimit);
+universalScrape(targetUrl, targetLimit, competitorName);

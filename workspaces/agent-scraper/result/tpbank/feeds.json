@@ -1,0 +1,51 @@
+{
+  "status": "success",
+  "platform": "facebook",
+  "url": "https://www.facebook.com/TPBank",
+  "scraped_at": "2026-06-03T03:20:54.220Z",
+  "page_info": {
+    "name": "TPBank",
+    "followers": "1.5M",
+    "likes": "",
+    "description": "Ngân hàng TMCP Tiên Phong Commercial Bank"
+  },
+  "total_extracted": 3,
+  "posts": [
+    {
+      "header": "TPBank",
+      "content": "MỞ TÀI KHOẢN SHOP NHẬN TIỀN - RINH LIỀN LOA TING TING\n\n🎂 Mừng sinh nhật 18 tuổi, TPBank dành riêng cho chủ shop ưu đãi với món “trợ thủ” bán hàng cực tiện lợi.\n\nĐăng ký Tài khoản Shop TPBank và phát sinh giao dịch theo điều kiện chương trình, nhận ngay ưu đãi MIỄN PHÍ sử dụng Loa thông báo biến động số dư trong năm đầu tiên\n\nƯu đãi áp dụng đến hết 31/12/2026\n_\n🥂Đại tiệc “Cheer” vui - Party ưu đãi mừng sinh nhật TPBank 18\nKhám phá chi tiết ưu đãi:\nhttps://tpb.vn/khuyen-mai/tat-ca/tong-hop-uu-dai-mung-sinh-nhat-tpbank-18-tuoi \n#TPBank #TPBank18 #18nămTiênphongSángtạoSố #DaiTiecCheerVui",
+      "url": "https://www.facebook.com/reel/1535851301465522/",
+      "reaction": 39,
+      "comments": 1,
+      "shares": 4,
+      "time": 1780311727,
+      "time_text": "2026-06-01 18:02:07",
+      "platform": "facebook",
+      "source": "api_graphql"
+    },
+    {
+      "header": "TPBank",
+      "content": "🌿🐻 CHÚC MỪNG NGÀY QUỐC TẾ THIẾU NHI 1/6 \n\nTPBank chúc các Bé yêu có một ngày Quốc tế Thiếu nhi thật vui, để khởi đầu một mùa hè nhiều tiếng cười và ngập tràn trải nghiệm thú vị!\n\nBật mí cho các bé yêu:\n✨ Rất nhiều hoạt động trải nghiệm thú vị, những bất ngờ hấp dẫn và vô số niềm vui dành cho các Bé đang được TPBank chuẩn bị\n✨Hãy cùng theo dõi Fanpage TPBank để không bỏ lỡ những hoạt động đặc biệt mà TPBank dành cho các Bé nha!\n\n💜Cùng TPBank khởi động một mùa hè rực rỡ nhé! \n\n#TPBank #QuốcTếThiếuNhi",
+      "url": "https://www.facebook.com/TPBank/posts/pfbid03ruP8NekoeJ6gq1ZwaV14232CSL6oeov5SmBVVodHuqvT4bcrzSnDJ7LZEbMZqSol",
+      "reaction": 116,
+      "comments": 0,
+      "shares": 3,
+      "time": 1780304774,
+      "time_text": "2026-06-01 16:06:14",
+      "platform": "facebook",
+      "source": "api_graphql"
+    },
+    {
+      "header": "TPBank",
+      "content": "⏳ FLASH SALE THỨ SÁU HÀNG TUẦN: CANH GIỜ VÀNG, MUA VÉ MÁY BAY GIÁ HỜI TRÊN APP TPBANK\n\n🛫 Nhắc nhẹ hội mê xê dịch, khung giờ 11h-13h thứ 6 vẫn là \"giờ hoàng đạo\" để săn vé máy bay trên App TPBank \n Bay quốc tế: Nhập mã TPBANK18QUOCTE - Giảm 2 triệu đồng khi mua từ 02 vé \n Bay nội địa: Nhập mã TPBANK18NOIDIA - Giảm 500.000đ khi mua từ 02 vé.\n\nSố lượng có hạn! Nhanh tay săn vé bạn nhé!\n \"Chốt kèo\" cùng hội bạn thân ngay thôi!💜\n___\n🥂 Đại tiệc “Cheer” vui - Party ưu đãi mừng sinh nhật TPBank 18\nKhám phá chi tiết ưu đãi:\nhttps://tpb.vn/khuyen-mai/tat-ca/tong-hop-uu-dai-mung-sinh-nhat-tpbank-18-tuoi \n#TPBank #TPBank18 #18nămTiênphongSángtạoSố #DaiTiecCheerVui",
+      "url": "https://www.facebook.com/reel/1315186860721968/",
+      "reaction": 32,
+      "comments": 2,
+      "shares": 4,
+      "time": 1780232484,
+      "time_text": "2026-05-31 20:01:24",
+      "platform": "facebook",
+      "source": "api_graphql"
+    }
+  ]
+}

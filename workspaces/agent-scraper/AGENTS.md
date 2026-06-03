@@ -37,13 +37,13 @@ Bạn có nhiệm vụ tự ánh xạ yêu cầu của Orchestrator tới các f
 
 ## 1. Facebook Ads Library Scraper (Trích xuất Ads Library)
 - **File script:** `scripts/facebook/facebook_ads_library.js`
-- **Lệnh thực thi:** `node scripts/facebook/facebook_ads_library.js "<tên_page_đối_thủ>" [limit]`
-- **Tham số nhận vào:** `<tên_page_đối_thủ>` (hoặc query tìm kiếm) và số lượng limit (mặc định là 5 nếu không truyền).
+- **Lệnh thực thi:** `node scripts/facebook/facebook_ads_library.js "<tên_page_đối_thủ>" [limit] [competitorName]`
+- **Tham số nhận vào:** `<tên_page_đối_thủ>` (hoặc query tìm kiếm), số lượng limit (mặc định là 5 nếu không truyền) và `[competitorName]` (tên đối thủ để đặt tên folder kết quả).
 
 ## 2. Facebook Feed Scraper (Trích xuất Page Feed)
 - **File script:** `scripts/facebook/facebook_feed.js`
-- **Lệnh thực thi:** `node scripts/facebook/facebook_feed.js "<url_page>" "<limit>"`
-- **Tham số nhận vào:** `<url_page>` và `<limit>` (số nguyên hoặc ngày YYYY-MM-DD).
+- **Lệnh thực thi:** `node scripts/facebook/facebook_feed.js "<url_page>" "<limit>" [competitorName]`
+- **Tham số nhận vào:** `<url_page>`, `<limit>` (số nguyên hoặc ngày YYYY-MM-DD) và `[competitorName]` (tên đối thủ để đặt tên folder kết quả).
 
 ## 3. Video Transcription Scraper (Trích xuất Transcript Video)
 - **File script:** `scripts/video_transcript.py`
@@ -52,8 +52,8 @@ Bạn có nhiệm vụ tự ánh xạ yêu cầu của Orchestrator tới các f
 
 ## 4. TikTok Channel Analytics (Phân tích kênh TikTok)
 - **File script:** `scripts/tiktok/analytic.js`
-- **Lệnh thực thi:** `node scripts/tiktok/analytic.js <uniqueId>`
-- **Tham số nhận vào:** `<uniqueId>` (ID TikTok của kênh, ví dụ: "taylorswift").
+- **Lệnh thực thi:** `node scripts/tiktok/analytic.js <uniqueId> [competitorName]`
+- **Tham số nhận vào:** `<uniqueId>` (ID TikTok của kênh, ví dụ: "taylorswift") và `[competitorName]` (tên đối thủ để đặt tên folder kết quả).
 
 ## 5. Facebook Session Generator (Tạo/Kiểm tra Facebook Session)
 - **File script:** `scripts/facebook/session_generator.js`

@@ -100,8 +100,63 @@ function safeFileName(name) {
   return String(name).replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 100);
 }
 
-function output(data) {
+function cleanFolderName(name) {
+  if (!name) return 'default';
+  return name
+    .toLowerCase()
+    .replace(/đ/g, 'd')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s_]/g, '')
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+function filterAdItem(ad) {
+  if (!ad) return ad;
+  return {
+    ad_archive_id: ad.ad_archive_id,
+    url: ad.url,
+    page_id: ad.page_id,
+    page_name: ad.page_name,
+    page_profile_uri: ad.page_profile_uri,
+    page_like_count: ad.page_like_count,
+    page_categories: ad.page_categories,
+    title: ad.title,
+    link_description: ad.link_description,
+    publisher_platform: ad.publisher_platform,
+    raw: {
+      snapshot: {
+        body: {
+          text: ad.raw?.snapshot?.body?.text || ad.raw?.body?.text || ""
+        }
+      }
+    }
+  };
+}
+
+function output(data, competitorName) {
+  if (data && Array.isArray(data.results)) {
+    data.results = data.results.map(filterAdItem);
+  }
+
   console.log(JSON.stringify(data, null, 2));
+
+  if (data && data.type === "ads_library_lookup" && data.results && data.results.length > 0) {
+    const firstItem = data.results[0];
+    const headerName = competitorName || firstItem.page_name || firstItem.header || data.selected_page_name || data.query || 'default';
+    const folderName = cleanFolderName(headerName);
+    if (folderName) {
+      const resultDir = path.join(__dirname, "../../result", folderName);
+      if (!fs.existsSync(resultDir)) {
+        fs.mkdirSync(resultDir, { recursive: true });
+      }
+      const resultFilePath = path.join(resultDir, "ads_library.json");
+      fs.writeFileSync(resultFilePath, JSON.stringify(data, null, 2));
+    }
+  }
 }
 
 function outputError(reason, extra = {}) {
@@ -466,7 +521,7 @@ function extractAdsFromResponseText(responseText, seenArchiveIds = new Set(), li
   return allAds;
 }
 
-async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT) {
+async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT, competitorName) {
   const { page, close } = await createBrowser();
 
   const rawResponses = [];
@@ -495,16 +550,6 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT) {
       const task = (async () => {
         try {
           const text = await response.text();
-
-          console.log(
-            `[DEBUG] GraphQL Response Intercepted. Length: ${text.length}`
-          );
-
-          fs.writeFileSync(
-            path.join(CONFIG.DEBUG_DIR, `graphql_response_${Date.now()}.json`),
-            text
-          );
-
           rawResponses.push(text);
         } catch (err) {
           console.log(`[GRAPHQL READ ERROR] ${err.message}`);
@@ -570,10 +615,6 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT) {
     console.log(`[DEBUG] Extracted Ads Count: ${seenArchiveIds.size}`);
     console.log(`[DEBUG] Returned Ads Count: ${Math.min(extractedAds.length, limit)}`);
 
-    fs.writeFileSync(
-      path.join(CONFIG.DEBUG_DIR, "temp_ads.json"),
-      JSON.stringify(extractedAds, null, 2)
-    );
 
     const selectedPageUrl = page.url();
     const selectedPageId = extractPageIdFromUrl(selectedPageUrl);
@@ -595,7 +636,7 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT) {
       selected_page_url: selectedPageUrl,
       total_found: extractedAds.length,
       results: extractedAds.slice(0, limit)
-    });
+    }, competitorName);
   } finally {
     await close();
   }
@@ -606,37 +647,24 @@ async function main() {
   const query = process.argv[2];
   const limitArg = process.argv[3];
   const limit = Number(limitArg) > 0 ? Number(limitArg) : CONFIG.DEFAULT_LIMIT;
+  const competitorName = process.argv[4];
 
   if (!query) {
     return outputError("missing_arguments", {
-      expected: "node facebook_ads_library.js <query> [limit]"
+      expected: "node facebook_ads_library.js <query> [limit] [competitorName]"
     });
   }
 
   try {
-    const tempFile = path.join(CONFIG.DEBUG_DIR, "temp_ads.json");
-    if (fs.existsSync(tempFile)) {
-      fs.unlinkSync(tempFile);
-    }
-
-    await handleAdsLibraryLookup(query, limit);
+    await handleAdsLibraryLookup(query, limit, competitorName);
   } catch (err) {
-    const tempFile = path.join(CONFIG.DEBUG_DIR, "temp_ads.json");
-    let partialResults = [];
-
-    if (fs.existsSync(tempFile)) {
-      try {
-        partialResults = JSON.parse(fs.readFileSync(tempFile, "utf8"));
-      } catch (_) {}
-    }
-
     output({
       type: "ads_library_lookup",
       query,
       limit,
       error: err.message,
-      results: partialResults
-    });
+      results: []
+    }, competitorName);
   } finally {
   }
 }
