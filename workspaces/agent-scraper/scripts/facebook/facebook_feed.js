@@ -242,6 +242,10 @@ class AIHelper {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.apiKey}` },
         timeout: 45000
       });
+      const usage = response.data?.usage;
+      if (usage) {
+        console.log(`[AI Token Usage] analyzeImage: prompt_tokens=${usage.prompt_tokens}, completion_tokens=${usage.completion_tokens}, total_tokens=${usage.total_tokens}`);
+      }
       let content = response.data.choices[0].message.content;
       if (isJsonFormat) return JSON.parse(content.replace(/```json/gi, '').replace(/```/g, '').trim());
       return content;
@@ -356,6 +360,11 @@ QUAN TRỌNG:
             },
             timeout: 300000
           });
+
+          const usage = response.data?.usage;
+          if (usage) {
+            console.log(`[AI Token Usage] extractPostsFromData (Chunk ${i + 1}/${chunks.length}, retry=${retry}): prompt_tokens=${usage.prompt_tokens}, completion_tokens=${usage.completion_tokens}, total_tokens=${usage.total_tokens}`);
+          }
 
           let content = response.data.choices?.[0]?.message?.content || '';
 
