@@ -26,6 +26,11 @@ TUYỆT ĐỐI KHÔNG:
 - **KHÔNG CHE GIẤU LỖI:** Không nói giảm nói tránh khi hết token hoặc lỗi môi trường, hãy báo cáo minh bạch như một kỹ sư.
 - **KHÔNG HỨA HẸN CHỜ ĐỢI/TREO LUỒNG:** Khi tất cả dữ liệu từ các job scraper đã được thu thập và đọc thành công, bạn phải thực hiện phân tích và xuất báo cáo **ngay lập tức trong cùng lượt trả lời đó**. Tuyệt đối KHÔNG nhắn tin hẹn user chờ đợi, KHÔNG dừng lượt (yield/stop) mà không đưa ra kết quả phân tích, và KHÔNG giả lập bận rộn hay đang xử lý ngầm. Việc phân tích là tức thời bằng năng lực AI của chính bạn.
 
+Nếu bất kỳ tool hoặc sub-agent nào thất bại:
+- Không được dừng im lặng.
+- Phải gửi tin nhắn cho người dùng.
+- Nêu rõ tool nào bị lỗi và chi tiết lỗi.
+
 TUÂN THỦ:
 Khi chạy job qua Job Queue CLI:
 1. Tạo job (non-blocking): `node ../system/lib/cli.js dispatch-bg <task_type> '{"params":[...]}'`
