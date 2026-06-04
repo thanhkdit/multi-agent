@@ -26,7 +26,7 @@ MODEL=model_name
 MAX_TOKEN=12000
 
 # TikTok RapidAPI Keys (comma separated)
-TIKTOK_RAPIDAPI_KEYS=key1,key2,key3
+RAPIDAPI_KEYS=key1,key2,key3
 ```
 
 ## Session Management (Quan trọng!)

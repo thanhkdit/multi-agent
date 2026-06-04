@@ -16,11 +16,11 @@ const fs = require('fs');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const RAPIDAPI_HOST = "tiktok-api23.p.rapidapi.com";
-const keysStr = process.env.TIKTOK_RAPIDAPI_KEYS || "";
+const keysStr = process.env.RAPIDAPI_KEYS || "";
 const RAPIDAPI_KEY = keysStr.split(',').map(k => k.trim()).filter(k => k.length > 0);
 
 if (RAPIDAPI_KEY.length === 0) {
-  console.error("[FATAL] Missing TIKTOK_RAPIDAPI_KEYS in .env");
+  console.error("[FATAL] Missing RAPIDAPI_KEYS in .env");
   process.exit(1);
 }
 const BASE_URL = `https://${RAPIDAPI_HOST}/api`;
