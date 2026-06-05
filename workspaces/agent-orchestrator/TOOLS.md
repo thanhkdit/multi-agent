@@ -54,7 +54,7 @@ node ../system/lib/cli.js dispatch-bg facebook_feed '{"params":[...]}'
 node ../system/lib/cli.js await-jobs job123
 ```
 - Nếu JSON có `"poll_result": "all_done"` → Lấy `output_path` để đọc file.
-- Nếu JSON có `"poll_result": "timeout"` → Tiếp tục chạy lại lệnh `await-jobs job123` ở lượt tiếp theo (hoặc trong cùng một luồng suy nghĩ) cho đến khi xong. Cấm không được trả lời người dùng khi chưa `all_done`.
+- Nếu JSON có `"poll_result": "timeout"` → BẮT BUỘC tiếp tục chạy lại lệnh `await-jobs <pending_job_ids>` NGAY LẬP TỨC trong cùng một lượt suy nghĩ hiện tại. TUYỆT ĐỐI KHÔNG ĐƯỢC nhắn tin trả lời người dùng để báo đang chờ. Hãy tự động vòng lặp gọi tool cho đến khi nhận được `all_done`.
 
 ---
 
