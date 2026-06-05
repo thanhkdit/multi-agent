@@ -30,7 +30,7 @@ module.exports = {
   TASK_TIMEOUTS: {
     facebook_feed: 600,
     facebook_ads_library: 600,
-    facebook_session: 300,
+    facebook_session: 60,
     tiktok_analytic: 180,
     video_transcript: 300,
     default: 600,

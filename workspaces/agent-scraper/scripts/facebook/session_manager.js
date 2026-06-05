@@ -30,6 +30,10 @@ const BROWSER_DATA_DIR = path.join(WORKSPACE_ROOT, 'browser-data');
 const DEBUG_DIR = path.join(WORKSPACE_ROOT, 'debug');
 const SESSION_LOG = path.join(DEBUG_DIR, 'session.log');
 
+// Daemon coordination files
+const DAEMON_PID_FILE = path.join(SESSION_DIR, 'session_daemon.pid');
+const DAEMON_STATUS_FILE = path.join(SESSION_DIR, 'session_daemon_status.json');
+
 // ── Config ───────────────────────────────────────────────────────────
 const DISPLAY_NUM = process.env.DISPLAY_NUM || '99';
 const LOGIN_TIMEOUT_MS = parseInt(process.env.LOGIN_TIMEOUT_MS) || 600000; // 10 phút
@@ -342,7 +346,10 @@ async function startRemoteLoginSession(opts = {}) {
 
   const serverIP = getServerIP();
   const cdpUrl = `http://${serverIP}:${CDP_PORT}`;
-  const vncUrl = process.env.VNC_PUBLIC_URL || `http://${serverIP}:${VNC_PORT}`;
+  let vncUrl = process.env.VNC_PUBLIC_URL || `http://${serverIP}:${VNC_PORT}`;
+  if (!vncUrl.startsWith('http://') && !vncUrl.startsWith('https://')) {
+    vncUrl = `http://${vncUrl}`;
+  }
 
   const needLogin = await isLoginPage(page);
 
@@ -352,29 +359,46 @@ async function startRemoteLoginSession(opts = {}) {
     await context.close();
     cleanup(startedProcesses);
     const finalStatus = checkSessionStatus();
+    if (opts.statusFilePath) {
+      writeDaemonStatus(opts.statusFilePath, {
+        state: 'already_logged_in',
+        message: 'Đã đăng nhập sẵn trong persistent profile.',
+        session: finalStatus
+      });
+    }
     return { success: true, status: finalStatus };
   }
 
   // Khởi chạy Web VNC Server
   const vncServer = startVncServer(page, VNC_PORT);
 
-  // Trả về URL cho admin kết nối
-  console.log('');
-  console.log('═'.repeat(64));
-  console.log('🖥️  BROWSER ĐÃ MỞ TRÊN SERVER — CẦN LOGIN FACEBOOK');
-  console.log('═'.repeat(64));
-  console.log('');
-  console.log('  Mở đường dẫn sau trên trình duyệt để đăng nhập thủ công:');
-  console.log('');
-  console.log(`  👉  ${vncUrl}`);
-  console.log('');
-  console.log('  Bước 1: Mở link trên, bạn sẽ thấy giao diện của trình duyệt');
-  console.log('  Bước 2: Click vào ô Username/Password và sử dụng nút "Gửi Text" để nhập');
-  console.log('  Bước 3: Bấm Enter hoặc click nút Đăng nhập để vào Facebook');
-  console.log('  Bước 4: Script tự phát hiện login và lưu session');
-  console.log(`  ⏳ Timeout: ${LOGIN_TIMEOUT_MS / 60000} phút`);
-  console.log('');
-  console.log('═'.repeat(64));
+  // Ghi status file cho launcher biết VNC đã sẵn sàng
+  if (opts.statusFilePath) {
+    writeDaemonStatus(opts.statusFilePath, {
+      state: 'waiting_login',
+      vnc_url: vncUrl,
+      pid: process.pid,
+      started_at: new Date().toISOString()
+    });
+  }
+
+  // Trả về URL cho admin kết nối (log ra stderr/console)
+  console.error('');
+  console.error('═'.repeat(64));
+  console.error('🖥️  BROWSER ĐÃ MỞ TRÊN SERVER — CẦN LOGIN FACEBOOK');
+  console.error('═'.repeat(64));
+  console.error('');
+  console.error('  Mở đường dẫn sau trên trình duyệt để đăng nhập thủ công:');
+  console.error('');
+  console.error(`  👉  ${vncUrl}`);
+  console.error('');
+  console.error('  Bước 1: Mở link trên, bạn sẽ thấy giao diện của trình duyệt');
+  console.error('  Bước 2: Click vào ô Username/Password và sử dụng nút "Gửi Text" để nhập');
+  console.error('  Bước 3: Bấm Enter hoặc click nút Đăng nhập để vào Facebook');
+  console.error('  Bước 4: Script tự phát hiện login và lưu session');
+  console.error(`  ⏳ Timeout: ${LOGIN_TIMEOUT_MS / 60000} phút`);
+  console.error('');
+  console.error('═'.repeat(64));
 
   const loginResult = { success: false, url: vncUrl };
 
@@ -396,6 +420,12 @@ async function startRemoteLoginSession(opts = {}) {
     console.log('═'.repeat(64));
   } else {
     logSession('error', 'Login thất bại — quá thời gian chờ.');
+    if (opts.statusFilePath) {
+      writeDaemonStatus(opts.statusFilePath, {
+        state: 'error',
+        message: 'Login thất bại — quá thời gian chờ.'
+      });
+    }
   }
 
   vncServer.close();
@@ -412,13 +442,69 @@ function cleanup(processes) {
   }
 }
 
+// ── Daemon Helpers ──────────────────────────────────────────────────
+
+/**
+ * Ghi status file cho daemon coordination.
+ * @param {string} filePath
+ * @param {object} data
+ */
+function writeDaemonStatus(filePath, data) {
+  try {
+    ensureDirs();
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (e) {
+    logSession('error', 'Không thể ghi status file: ' + e.message);
+  }
+}
+
+/**
+ * Đọc status file. Trả về null nếu không tồn tại.
+ * @param {string} filePath
+ * @returns {object|null}
+ */
+function readDaemonStatus(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Kiểm tra daemon có đang chạy không (dựa trên PID file).
+ * @returns {boolean}
+ */
+function isDaemonAlive() {
+  try {
+    if (!fs.existsSync(DAEMON_PID_FILE)) return false;
+    const data = JSON.parse(fs.readFileSync(DAEMON_PID_FILE, 'utf-8'));
+    // Kiểm tra process còn sống không
+    process.kill(data.pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Dọn dẹp các file daemon cũ.
+ */
+function cleanupDaemonFiles() {
+  try { fs.unlinkSync(DAEMON_PID_FILE); } catch {}
+  try { fs.unlinkSync(DAEMON_STATUS_FILE); } catch {}
+}
+
 // ── Exports ─────────────────────────────────────────────────────────
 
 module.exports = {
   WORKSPACE_ROOT, SESSION_DIR, SESSION_FILE, BROWSER_DATA_DIR, DEBUG_DIR,
+  DAEMON_PID_FILE, DAEMON_STATUS_FILE,
   CDP_PORT, LOGIN_TIMEOUT_MS,
   ensureDirs, logSession,
   checkSessionStatus, saveSession, getValidSessionPath,
   isLoginPage, waitForManualLogin,
-  startRemoteLoginSession, getServerIP
+  startRemoteLoginSession, getServerIP,
+  writeDaemonStatus, readDaemonStatus, isDaemonAlive, cleanupDaemonFiles,
 };
