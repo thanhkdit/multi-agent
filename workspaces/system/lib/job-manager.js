@@ -242,7 +242,24 @@ function completeJob(jobId, outputPath = '') {
   job.output_path = outputPath;
 
   atomicWriteJson(filePath, job);
-  atomicMove(filePath, config.COMPLETED_DIR);
+  
+  ensureDir(config.COMPLETED_DIR);
+  const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000);
+  try {
+    const compFiles = fs.readdirSync(config.COMPLETED_DIR);
+    for (const file of compFiles) {
+      if (file.endsWith('.json')) {
+        const tsStr = file.split('_')[0];
+        if (tsStr && /^\d+$/.test(tsStr) && parseInt(tsStr, 10) < threeDaysAgo) {
+          try { fs.unlinkSync(path.join(config.COMPLETED_DIR, file)); } catch {}
+        }
+      }
+    }
+  } catch {}
+
+  const timestamp = Date.now();
+  const destPath = path.join(config.COMPLETED_DIR, `${timestamp}_${jobId}.json`);
+  fs.renameSync(filePath, destPath);
 
   return job;
 }
@@ -314,7 +331,6 @@ function getJob(jobId) {
   const dirs = [
     config.QUEUE_DIR,
     config.RUNNING_DIR,
-    config.COMPLETED_DIR,
     config.FAILED_DIR,
     config.STALE_DIR,
   ];
@@ -324,6 +340,15 @@ function getJob(jobId) {
     const job = readJson(filePath);
     if (job) return job;
   }
+
+  try {
+    const compFiles = fs.readdirSync(config.COMPLETED_DIR);
+    const targetFile = compFiles.find(f => f === filename || f.endsWith(`_${filename}`));
+    if (targetFile) {
+      const job = readJson(path.join(config.COMPLETED_DIR, targetFile));
+      if (job) return job;
+    }
+  } catch {}
 
   return null;
 }

@@ -164,7 +164,22 @@ async function main() {
 
     // Save output to shared/result/_jobs/
     ensureDir(config.JOBS_RESULT_DIR);
-    const outputFilename = `${job.task_type}_${job.job_id}.json`;
+    
+    const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000);
+    try {
+      const resultFiles = fs.readdirSync(config.JOBS_RESULT_DIR);
+      for (const file of resultFiles) {
+        if (file.endsWith('.json')) {
+          const tsStr = file.split('_')[0];
+          if (tsStr && /^\d+$/.test(tsStr) && parseInt(tsStr, 10) < threeDaysAgo) {
+            try { fs.unlinkSync(path.join(config.JOBS_RESULT_DIR, file)); } catch {}
+          }
+        }
+      }
+    } catch {}
+
+    const timestamp = Date.now();
+    const outputFilename = `${timestamp}_${job.task_type}_${job.job_id}.json`;
     const outputPath = path.join(config.JOBS_RESULT_DIR, outputFilename);
 
     // Try to parse stdout as JSON, save raw if not
