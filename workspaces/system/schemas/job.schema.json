@@ -11,7 +11,7 @@
     },
     "task_type": {
       "type": "string",
-      "enum": ["facebook_feed", "facebook_ads_library", "tiktok_analytic", "video_transcript", "facebook_session"],
+      "enum": ["facebook_feed", "facebook_ads_library", "tiktok_analytic", "video_transcript", "facebook_login"],
       "description": "Type of task to execute"
     },
     "status": {

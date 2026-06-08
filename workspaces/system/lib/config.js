@@ -30,7 +30,7 @@ module.exports = {
   TASK_TIMEOUTS: {
     facebook_feed: 600,
     facebook_ads_library: 600,
-    facebook_session: 60,
+    facebook_login: 60,
     tiktok_analytic: 180,
     video_transcript: 300,
     default: 600,
@@ -72,7 +72,7 @@ module.exports = {
       cwd: path.join(PROJECT_ROOT, 'workspaces', 'agent-scraper'),
       buildArgs: (params) => ['python3', 'scripts/video_transcript.py', ...params],
     },
-    facebook_session: {
+    facebook_login: {
       script: 'scripts/facebook/session_generator.js',
       cwd: path.join(PROJECT_ROOT, 'workspaces', 'agent-scraper'),
       buildArgs: (params) => ['node', 'scripts/facebook/session_generator.js', ...params],
