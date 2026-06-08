@@ -30,14 +30,15 @@ Trích xuất và chuẩn bị các tham số. Trở thành một agent "mở":
 - **Quy tắc xác định và chuẩn hóa các tham số ứng với từng script:**
   1. **facebook_feed**:
      - `url_page`: URL chính thức của trang Facebook (bắt buộc KHÔNG được có dấu gạch chéo `/` ở cuối, ví dụ: `https://www.facebook.com/TPBank`).
-     - `limit`: Số lượng bài viết muốn quét (mặc định nếu không chỉ định là `6`).
+     - `limit`: Số lượng bài viết muốn quét (mặc định nếu không chỉ định là `5`).
      - `competitorName`: Tên đối thủ/thương hiệu dạng viết liền hoặc có dấu viết chuẩn (ví dụ: `TPBank`).
   2. **facebook_ads_library**:
-     - `tên_page_đối_thủ`: Tên trang đối thủ chính xác hoặc từ khóa tìm kiếm quảng cáo (ví dụ: `TPBank` hoặc `TPBank - Ngân Hàng Tiên Phong`).
+     - `tên_đối_thủ`: Tên đối thủ hoặc từ khóa tìm kiếm quảng cáo (ví dụ: `TPBank` hoặc `TPBank - Ngân Hàng Tiên Phong`).
      - `limit`: Số lượng quảng cáo muốn quét (mặc định nếu không chỉ định là `5`).
      - `competitorName`: Tên đối thủ/thương hiệu dạng viết liền hoặc có dấu viết chuẩn (ví dụ: `TPBank`).
   3. **tiktok_analytic**:
      - `uniqueId`: TikTok ID của kênh (bắt buộc KHÔNG được có dấu `@` ở đầu, ví dụ: `tpbank_official`).
+     - `limit`: Số lượng video mới nhất muốn phân tích (mặc định nếu không chỉ định là `5`, tối đa `20`).
      - `competitorName`: Tên đối thủ/thương hiệu dạng viết liền hoặc có dấu viết chuẩn (ví dụ: `TPBank`).
   4. **video_transcript**:
      - `urls`: Danh sách một hoặc nhiều URL video TikTok/Youtube/Facebook cụ thể cần lấy transcript.
@@ -63,7 +64,7 @@ Mỗi object trong mảng đại diện cho một job, tuân theo cấu trúc: `
   - Nếu chạy `facebook_login`: `{"task_type": "facebook_login", "params": ["--check"]}` hoặc `["--force"]`
   - Nếu chạy `facebook_feed`: `{"task_type": "facebook_feed", "params": ["<url_page>", "<limit>", "<competitorName>"]}`
   - Nếu chạy `facebook_ads_library`: `{"task_type": "facebook_ads_library", "params": ["<tên_page_đối_thủ>", "<limit>", "<competitorName>"]}`
-  - Nếu chạy `tiktok_analytic`: `{"task_type": "tiktok_analytic", "params": ["<uniqueId>", "<competitorName>"]}`
+  - Nếu chạy `tiktok_analytic`: `{"task_type": "tiktok_analytic", "params": ["<uniqueId>", "<limit>", "<competitorName>"]}`
   - Nếu chạy `video_transcript`: `{"task_type": "video_transcript", "params": ["<url1>", "<url2>", ...]}`
 
 *Ví dụ gửi lệnh gộp nhiều script qua tool `sessions_spawn`:*
@@ -71,7 +72,7 @@ Mỗi object trong mảng đại diện cho một job, tuân theo cấu trúc: `
 [
   {"task_type": "facebook_feed", "params": ["https://www.facebook.com/TPBank", "6", "TPBank"]},
   {"task_type": "facebook_ads_library", "params": ["TPBank", "5", "TPBank"]},
-  {"task_type": "tiktok_analytic", "params": ["tpbank_official", "TPBank"]}
+  {"task_type": "tiktok_analytic", "params": ["tpbank_official", "3", "TPBank"]}
 ]
 ```
 
@@ -128,4 +129,4 @@ Trong bất kỳ tiến trình nào, nếu JSON trả về chứa lỗi `quota e
 
 | Nguồn | Ngày đăng | Nội dung gốc (text) | Tóm tắt nhanh | Tương tác (Linh hoạt tùy nguồn) | Link (vào thẻ `<a>`) |
 
-- **QUAN TRỌNG:** Nếu người dùng yêu cầu xuất file báo cáo (như excel, csv), bạn BẮT BUỘC phải sử dụng công cụ chạy lệnh (bash tool) để lưu các file đó vào thư mục `file_download/` (ví dụ chạy lệnh tạo thư mục nếu chưa có rồi ghi file). Không được tạo ở thư mục gốc của workspace.
+- **QUAN TRỌNG:** Nếu người dùng yêu cầu xuất file báo cáo (như excel, csv), bạn BẮT BUỘC phải sử dụng công cụ chạy lệnh (bash tool) để lưu các file đó vào thư mục `file_download/` (ví dụ chạy lệnh tạo thư mục nếu chưa có rồi ghi file). Nếu không thì thôi.

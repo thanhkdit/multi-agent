@@ -30,7 +30,7 @@ Nhiệm vụ của bạn là nhận mảng JSON đó, ví dụ:
 Bản đồ Task Types hợp lệ và cấu trúc tham số (để đối chiếu khi chạy CLI):
 - `facebook_ads_library`: `["<tên_page_đối_thủ_hoặc_query>", "<limit>", "<competitorName>"]`
 - `facebook_feed`: `["<url_page>", "<limit>", "<competitorName>"]`
-- `tiktok_analytic`: `["<uniqueId>", "<competitorName>"]`
+- `tiktok_analytic`: `["<uniqueId>", "<limit>", "<competitorName>"]`
 - `video_transcript`: `["<url1>", "<url2>", ...]`
 - `facebook_login`: `["--check"]` hoặc `["--force"]`
 
