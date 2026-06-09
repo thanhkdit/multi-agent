@@ -95,23 +95,6 @@ async function getUserListVideo(secUid, count = 35) {
 }
 
 /**
- * Gọi API lấy chi tiết video
- * GET /api/post/detail?videoId=<videoId>
- */
-async function getVideoDetail(videoId) {
-  const url = `${BASE_URL}/post/detail?videoId=${encodeURIComponent(videoId)}`;
-  // console.log(`[INFO] Fetching video detail for: ${videoId}`);
-
-  const data = await fetchWithRetry(url);
-
-  if (data.statusCode !== 0) {
-    throw new Error(`getVideoDetail API error for ${videoId}: ${data.statusMsg || "Unknown error"}`);
-  }
-
-  return data;
-}
-
-/**
  * Trích xuất thông tin chính của kênh từ response getUserInfo
  */
 function extractChannelInfo(apiResponse) {
@@ -140,19 +123,9 @@ function extractChannelInfo(apiResponse) {
 }
 
 /**
- * Lấy author.createTime từ video detail response
- * (API getUserInfo không trả createTime, nhưng getVideoDetail có)
+ * Trích xuất thông্তি video từ item trong danh sách user/posts
  */
-function getAuthorCreateTimeFromVideoDetail(apiResponse) {
-  const author = apiResponse?.itemInfo?.itemStruct?.author || {};
-  return author.createTime || null;
-}
-
-/**
- * Trích xuất thông tin video từ response getVideoDetail
- */
-function extractVideoDetail(apiResponse, uniqueId) {
-  const item = apiResponse?.itemInfo?.itemStruct || {};
+function extractVideoDetail(item, uniqueId) {
   const video = item.video || {};
   const stats = item.stats || {};
 
@@ -207,37 +180,10 @@ async function analyzeTikTokChannel(uniqueId, limit = 3) {
 
   // console.log(`[INFO] Found ${latestItems.length} latest video(s), fetching details...`);
 
-  // 5. Gọi API get video detail cho từng video
-  const latestPosts = [];
-  let firstDetailResponse = null;
-  for (const item of latestItems) {
-    const videoId = item.id;
-    if (!videoId) {
-      // console.log("[WARN] Skipping item without video ID");
-      continue;
-    }
+  // 5. Trích xuất video detail cho từng video từ dữ liệu đã lấy
+  const latestPosts = latestItems.map(item => extractVideoDetail(item, uniqueId));
 
-    try {
-      const detailResponse = await getVideoDetail(videoId);
-      if (!firstDetailResponse) firstDetailResponse = detailResponse;
-      const videoDetail = extractVideoDetail(detailResponse, uniqueId);
-      latestPosts.push(videoDetail);
-      // console.log(`[OK] Video detail fetched: ${videoId}`);
-    } catch (err) {
-      console.error(`[ERROR] Failed to fetch detail for video ${videoId}: ${err.message}`);
-    }
-  }
-
-  // 6. Bổ sung channelCreatedAt từ video detail (nếu chưa có)
-  if (!channelInfo.channelCreatedAt && firstDetailResponse) {
-    const authorCreateTime = getAuthorCreateTimeFromVideoDetail(firstDetailResponse);
-    if (authorCreateTime) {
-      channelInfo.channelCreatedAt = new Date(authorCreateTime * 1000).toISOString();
-      // console.log(`[OK] Channel created at: ${channelInfo.channelCreatedAt}`);
-    }
-  }
-
-  // 7. Tổng hợp kết quả
+  // 6. Tổng hợp kết quả
   const result = {
     channel: channelInfo,
     latestPosts: latestPosts,
@@ -273,7 +219,7 @@ function cleanFolderName(name) {
     limit = 3;
     competitorName = process.argv[3];
   } else {
-    limit = Math.min(Math.max(limit, 1), 20);
+    limit = Math.min(Math.max(limit, 1), 15);
     competitorName = process.argv[4];
   }
 
