@@ -40,7 +40,7 @@ async function appendToGoogleSheetWeekly(competitorName, ads, runDate) {
     let maxVideos = 1;
     for (const ad of ads) {
       if (ad.images && Array.isArray(ad.images)) {
-        let count = ad.images.filter(img => img && img.resized_image_url).length;
+        let count = ad.images.filter(img => img && img.original_image_url).length;
         if (count > maxImages) {
           maxImages = count;
         }
@@ -100,9 +100,9 @@ async function appendToGoogleSheetWeekly(competitorName, ads, runDate) {
       if (ad.images && Array.isArray(ad.images)) {
         let imgIndex = 1;
         for (const img of ad.images) {
-          if (img && img.resized_image_url) {
+          if (img && img.original_image_url) {
             const header = imgIndex === 1 ? 'Ảnh' : `Ảnh ${imgIndex}`;
-            row[header] = `=IMAGE("${img.resized_image_url}")`;
+            row[header] = `=IMAGE("${img.original_image_url}")`;
             imgIndex++;
           }
         }

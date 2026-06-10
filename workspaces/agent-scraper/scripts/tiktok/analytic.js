@@ -209,7 +209,10 @@ function cleanFolderName(name) {
 
 // --- Main ---
 (async () => {
-  const uniqueId = process.argv[2];
+  let uniqueId = process.argv[2];
+  if (uniqueId && uniqueId.startsWith('@')) {
+    uniqueId = uniqueId.substring(1);
+  }
   const limitArg = process.argv[3];
   
   let limit = parseInt(limitArg, 10);
