@@ -119,7 +119,8 @@ async function getCompanyAds(pageId, limit) {
       end_date_string: ad.end_date_string || "",
       start_date_string: ad.start_date_string || "",
       url: ad.url || "",
-      images: ad.snapshot?.images || []
+      images: ad.snapshot?.images || [],
+      videos: ad.snapshot?.videos || []
     };
   });
 
@@ -147,6 +148,7 @@ async function appendToGoogleSheet(sheetTitle, ads) {
     await doc.loadInfo(); 
 
     let maxImages = 1;
+    let maxVideos = 1;
     for (const ad of ads) {
       if (ad.images && Array.isArray(ad.images)) {
         let count = ad.images.filter(img => img && img.resized_image_url).length;
@@ -154,11 +156,22 @@ async function appendToGoogleSheet(sheetTitle, ads) {
           maxImages = count;
         }
       }
+      if (ad.videos && Array.isArray(ad.videos)) {
+        let count = ad.videos.filter(v => v && (v.video_hd_url || v.video_preview_image_url)).length;
+        if (count > maxVideos) {
+          maxVideos = count;
+        }
+      }
     }
 
-    const headers = ['Ngày truy vấn', 'Ngày bắt đầu', 'Ngày kết thúc', 'Nội dung gốc', 'URL bài viết', 'URL ảnh'];
+    const headers = ['Ngày truy vấn', 'Ngày bắt đầu', 'Ngày kết thúc', 'Nội dung gốc', 'Video'];
+    for (let i = 2; i <= maxVideos; i++) {
+      headers.push(`Video ${i}`);
+    }
+
+    headers.push('Ảnh');
     for (let i = 2; i <= maxImages; i++) {
-      headers.push(`URL ảnh ${i}`);
+      headers.push(`Ảnh ${i}`);
     }
 
     let sheet = doc.sheetsByIndex.find(s => s.title.toLowerCase() === sheetTitle.toLowerCase());
@@ -175,19 +188,29 @@ async function appendToGoogleSheet(sheetTitle, ads) {
     const rows = [];
     for (const ad of ads) {
       const row = {
-        // format yyyy-mm-dd hh:mm:ss
-        'Ngày truy vấn': new Date().toISOString().replace('T', ' ').slice(0, 19),
+        // format yyyy-mm-dd hh:mm:ss VietNam +7
+        'Ngày truy vấn': new Date(Date.now() + 7 * 3600000).toISOString().replace('T', ' ').slice(0, 19),
         'Ngày bắt đầu': ad.start_date_string?.split('T')[0] || '',
         'Ngày kết thúc': ad.end_date_string?.split('T')[0] || '',
         'Nội dung gốc': ad.text || '',
-        'URL bài viết': ad.url || '',
       };
+
+      if (ad.videos && Array.isArray(ad.videos)) {
+        let videoIndex = 1;
+        for (const v of ad.videos) {
+          if (v && (v.video_hd_url || v.video_preview_image_url)) {
+            const header = videoIndex === 1 ? 'Video' : `Video ${videoIndex}`;
+            row[header] = `=HYPERLINK("${v.video_hd_url || ''}", IMAGE("${v.video_preview_image_url || ''}"))`;
+            videoIndex++;
+          }
+        }
+      }
 
       if (ad.images && Array.isArray(ad.images)) {
         let imgIndex = 1;
         for (const img of ad.images) {
           if (img && img.resized_image_url) {
-            const header = imgIndex === 1 ? 'URL ảnh' : `URL ảnh ${imgIndex}`;
+            const header = imgIndex === 1 ? 'Ảnh' : `Ảnh ${imgIndex}`;
             row[header] = `=IMAGE("${img.resized_image_url}")`;
             imgIndex++;
           }
@@ -268,4 +291,14 @@ async function main() {
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  fetchWithRetry,
+  searchCompanyAndGetPageId,
+  getCompanyAds,
+  appendToGoogleSheet,
+  cleanFolderName
+};
