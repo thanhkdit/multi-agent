@@ -440,7 +440,7 @@ function normalizeAdItem(item = {}, pageInfo = {}) {
   };
 }
 
-function shouldKeepAdByArchiveId(ad, seenArchiveIds) {
+function shouldKeepAd(ad, seenArchiveIds, seenTexts) {
   const adArchiveId = String(ad?.ad_archive_id || "").trim();
 
   if (!adArchiveId) {
@@ -451,7 +451,15 @@ function shouldKeepAdByArchiveId(ad, seenArchiveIds) {
     return false;
   }
 
+  const text = (ad?.body_text || "").trim();
+  if (text && seenTexts.has(text)) {
+    return false;
+  }
+
   seenArchiveIds.add(adArchiveId);
+  if (text) {
+    seenTexts.add(text);
+  }
   return true;
 }
 
@@ -460,6 +468,7 @@ function collectAdCandidatesFromObject(
   pageInfo = {},
   out = [],
   seenArchiveIds = new Set(),
+  seenTexts = new Set(),
   limit = Infinity
 ) {
   if (!obj || typeof obj !== "object") return out;
@@ -468,7 +477,7 @@ function collectAdCandidatesFromObject(
   if (Array.isArray(obj)) {
     for (const entry of obj) {
       if (out.length >= limit) break;
-      collectAdCandidatesFromObject(entry, pageInfo, out, seenArchiveIds, limit);
+      collectAdCandidatesFromObject(entry, pageInfo, out, seenArchiveIds, seenTexts, limit);
     }
     return out;
   }
@@ -476,7 +485,7 @@ function collectAdCandidatesFromObject(
   if (obj.ad_archive_id || obj.snapshot?.page_name || obj.body?.text || obj.cards) {
     const normalized = normalizeAdItem(obj, pageInfo);
 
-    if (shouldKeepAdByArchiveId(normalized, seenArchiveIds)) {
+    if (shouldKeepAd(normalized, seenArchiveIds, seenTexts)) {
       out.push(normalized);
       if (out.length >= limit) {
         return out;
@@ -493,6 +502,7 @@ function collectAdCandidatesFromObject(
         pageInfo,
         out,
         seenArchiveIds,
+        seenTexts,
         limit
       );
     }
@@ -501,7 +511,7 @@ function collectAdCandidatesFromObject(
   return out;
 }
 
-function extractAdsFromResponseText(responseText, seenArchiveIds = new Set(), limit = Infinity) {
+function extractAdsFromResponseText(responseText, seenArchiveIds = new Set(), seenTexts = new Set(), limit = Infinity) {
   const fragments = parseResponseFragments(responseText);
   const allAds = [];
 
@@ -514,6 +524,7 @@ function extractAdsFromResponseText(responseText, seenArchiveIds = new Set(), li
       pageInfo,
       allAds,
       seenArchiveIds,
+      seenTexts,
       limit
     );
   }
@@ -528,6 +539,7 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT, compe
   const pendingResponseTasks = [];
   const extractedAds = [];
   const seenArchiveIds = new Set();
+  const seenTexts = new Set();
 
   try {
     const adsUrl =
@@ -602,6 +614,7 @@ async function handleAdsLibraryLookup(query, limit = CONFIG.DEFAULT_LIMIT, compe
       const ads = extractAdsFromResponseText(
         responseText,
         seenArchiveIds,
+        seenTexts,
         remaining
       );
 
