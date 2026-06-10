@@ -161,7 +161,7 @@ async function appendToGoogleSheet(sheetTitle, ads) {
       headers.push(`URL ảnh ${i}`);
     }
 
-    let sheet = doc.sheetsByTitle[sheetTitle];
+    let sheet = doc.sheetsByIndex.find(s => s.title.toLowerCase() === sheetTitle.toLowerCase());
     if (!sheet) {
       sheet = await doc.addSheet({ 
         title: sheetTitle, 
