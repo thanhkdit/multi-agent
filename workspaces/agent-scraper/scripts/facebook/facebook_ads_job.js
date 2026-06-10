@@ -91,7 +91,8 @@ async function appendToGoogleSheetWeekly(competitorName, ads, runDate) {
         for (const v of ad.videos) {
           if (v && (v.video_hd_url || v.video_preview_image_url)) {
             const header = videoIndex === 1 ? 'Video' : `Video ${videoIndex}`;
-            row[header] = `=HYPERLINK("${v.video_hd_url || ''}", IMAGE("${v.video_preview_image_url || ''}"))`;
+            // Use semicolon (;) instead of comma (,) for Vietnamese Google Sheets locale
+            row[header] = `=HYPERLINK("${v.video_hd_url || ''}"; IMAGE("${v.video_preview_image_url || ''}"))`;
             videoIndex++;
           }
         }
