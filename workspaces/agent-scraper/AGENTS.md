@@ -34,6 +34,12 @@ Bản đồ Task Types hợp lệ và cấu trúc tham số (để đối chiế
 - `video_transcript`: `["<url1>", "<url2>", ...]`
 - `facebook_login`: `["--check"]` hoặc `["--force"]`
 
+---
+
+## CRONJOB SCRIPT (RUN DIRECTLY)
+Các script phục vụ cronjob phải được chạy trực tiếp lập tức, không đưa vào luồng `dispatch-bg`:
+- **`facebook_ads_job`**: Chạy bằng lệnh `node scripts/facebook/facebook_ads_job.js "<list_competitor_name>" "<limit_day>" "<search_string>"`
+
 ## STEP 2 — DISPATCH JOBS
 Thực thi lệnh gọi Job Queue `dispatch-bg` cho TỪNG tác vụ.
 

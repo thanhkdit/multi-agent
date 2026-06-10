@@ -152,6 +152,7 @@ async function appendToGoogleSheetWeekly(competitorName, ads, runDate) {
 async function runWeeklyJob() {
   const competitorsArg = process.argv[2];
   const daysLimitArg = process.argv[3];
+  const searchArg = process.argv[4];
 
   if (!competitorsArg) {
     console.error(JSON.stringify({
@@ -199,14 +200,20 @@ async function runWeeklyJob() {
       const rawAds = await getCompanyAds(pageInfo.page_id, 100);
       console.log(`[Weekly Job] Retrieved ${rawAds.length} total active ads.`);
 
-      // 3. Filter by start_date_string
-      const filteredAds = rawAds.filter(ad => {
+      // 3. Filter by start_date_string and search string
+      let filteredAds = rawAds.filter(ad => {
         if (!ad.start_date_string) return false;
         const start = new Date(ad.start_date_string);
         return start >= cutoffDate;
       });
 
-      console.log(`[Weekly Job] ${filteredAds.length} ads match the date filter (>= ${daysLimit} days ago).`);
+      if (searchArg) {
+        const searchLower = searchArg.toLowerCase();
+        filteredAds = filteredAds.filter(ad => ad.text && ad.text.toLowerCase().includes(searchLower));
+        console.log(`[Weekly Job] ${filteredAds.length} ads match the date filter and search string "${searchArg}".`);
+      } else {
+        console.log(`[Weekly Job] ${filteredAds.length} ads match the date filter (>= ${daysLimit} days ago).`);
+      }
 
       // 4. Push to sheet
       await appendToGoogleSheetWeekly(competitor, filteredAds, runDate);
