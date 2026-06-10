@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 const fs = require("fs");
 const path = require("path");
+const { GoogleSpreadsheet } = require('google-spreadsheet');
+const { JWT } = require('google-auth-library');
 
 require("dotenv").config({
   path: path.join(__dirname, "../../.env")
@@ -103,11 +105,90 @@ async function getCompanyAds(pageId, limit) {
       page_like_count: ad.snapshot?.page_like_count || ad.page_like_count || 0,
       end_date_string: ad.end_date_string || "",
       start_date_string: ad.start_date_string || "",
-      url: ad.url || ""
+      url: ad.url || "",
+      images: ad.snapshot?.images || []
     };
   });
 
   return mappedAds;
+}
+
+async function appendToGoogleSheet(sheetTitle, ads) {
+  const sheetId = process.env.GOOGLE_SHEET_KEY || "1tP20p8VCdsYITxGirBqGwi10HNki_3HE64V3esZZuwo";
+  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+  if (!clientEmail || !privateKey) {
+    console.log("[Google Sheets] Missing GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_PRIVATE_KEY. Skipping sheet export.");
+    return;
+  }
+
+  try {
+    const serviceAccountAuth = new JWT({
+      email: clientEmail,
+      key: privateKey,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
+    const doc = new GoogleSpreadsheet(sheetId, serviceAccountAuth);
+    await doc.loadInfo(); 
+
+    let maxImages = 1;
+    for (const ad of ads) {
+      if (ad.images && Array.isArray(ad.images)) {
+        let count = ad.images.filter(img => img && img.resized_image_url).length;
+        if (count > maxImages) {
+          maxImages = count;
+        }
+      }
+    }
+
+    const headers = ['Ngày bắt đầu', 'Ngày kết thúc', 'Nội dung gốc', 'URL bài viết', 'URL ảnh'];
+    for (let i = 2; i <= maxImages; i++) {
+      headers.push(`URL ảnh ${i}`);
+    }
+
+    let sheet = doc.sheetsByTitle[sheetTitle];
+    if (!sheet) {
+      sheet = await doc.addSheet({ 
+        title: sheetTitle, 
+        headerValues: headers 
+      });
+    } else {
+      await sheet.clear();
+      await sheet.setHeaderRow(headers);
+    }
+
+    const rows = [];
+    for (const ad of ads) {
+      const row = {
+        'Ngày bắt đầu': ad.start_date_string || '',
+        'Ngày kết thúc': ad.end_date_string || '',
+        'Nội dung gốc': ad.text || '',
+        'URL bài viết': ad.url || '',
+      };
+
+      if (ad.images && Array.isArray(ad.images)) {
+        let imgIndex = 1;
+        for (const img of ad.images) {
+          if (img && img.resized_image_url) {
+            const header = imgIndex === 1 ? 'URL ảnh' : `URL ảnh ${imgIndex}`;
+            row[header] = `=IMAGE("${img.resized_image_url}")`;
+            imgIndex++;
+          }
+        }
+      }
+
+      rows.push(row);
+    }
+
+    if (rows.length > 0) {
+      await sheet.addRows(rows);
+      console.log(`[Google Sheets] Đã lưu ${rows.length} quảng cáo vào sheet "${sheetTitle}".`);
+    }
+  } catch (error) {
+    console.error("[Google Sheets] Error saving to Google Sheet:", error.message);
+  }
 }
 
 async function main() {
@@ -157,6 +238,10 @@ async function main() {
       const resultFilePath = path.join(resultDir, "ads_library.json");
       fs.writeFileSync(resultFilePath, JSON.stringify(resultData, null, 2));
     }
+
+    // Export to Google Sheet
+    await appendToGoogleSheet(headerName, ads);
+
   } catch (err) {
     console.log(JSON.stringify({
       type: "ads_library_lookup",

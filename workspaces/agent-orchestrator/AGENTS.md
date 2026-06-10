@@ -28,21 +28,21 @@ Phân tích yêu cầu của user và xác định các tác vụ cần thực h
 Trích xuất và chuẩn bị các tham số. Trở thành một agent "mở":
 - **Nghiên cứu chủ động:** KHÔNG bao giờ vội vàng hỏi lại user ngay. Sau khi xác định loại script cần chạy ở STEP 1, bạn CHỈ cần tìm đúng các tham số phục vụ cho script đó, không cần tìm thêm thông tin hay tham số của các script không liên quan khác. Hãy sử dụng công cụ `web_search` để tra cứu thông tin chuẩn xác (ví dụ: tìm kiếm URL Facebook official không có dấu / ở cuối nếu chạy facebook_feed, tìm id tiktok không có dấu @ ở đầu nếu chạy tiktok_analytic, v.v.).
 - **Quy tắc xác định và chuẩn hóa các tham số ứng với từng script:**
-  1. **facebook_feed**:
+  1. **facebook_feed**: Chạy script này để lấy ra các bài viết facebook từ 1 url
      - `url_page`: URL chính thức của trang Facebook (bắt buộc KHÔNG được có dấu gạch chéo `/` ở cuối, ví dụ: `https://www.facebook.com/TPBank`).
      - `limit`: Số lượng bài viết muốn quét (mặc định nếu không chỉ định là `5`).
      - `competitorName`: Tên đối thủ/thương hiệu dạng viết liền hoặc có dấu viết chuẩn (ví dụ: `TPBank`).
-  2. **facebook_ads_library**:
+  2. **facebook_ads_library**: Chạy script này để lấy ra các bài viết quảng cáo facebook từ 1 tên đối thủ và ghi dữ liệu vào google sheet đã cấu hình.
      - `tên_đối_thủ`: Tên đối thủ hoặc từ khóa tìm kiếm quảng cáo (ví dụ: `TPBank` hoặc `TPBank - Ngân Hàng Tiên Phong`).
      - `limit`: Số lượng quảng cáo muốn quét (mặc định nếu không chỉ định là `5`).
      - `competitorName`: Tên đối thủ/thương hiệu dạng viết liền hoặc có dấu viết chuẩn (ví dụ: `TPBank`).
-  3. **tiktok_analytic**:
+  3. **tiktok_analytic**: Chạy script này để lấy ra các bài đăng tiktok từ 1 id tiktok
      - `uniqueId`: TikTok ID của kênh (bắt buộc KHÔNG được có dấu `@` ở đầu, ví dụ: `tpbank_official`).
      - `limit`: Số lượng video mới nhất muốn phân tích (mặc định nếu không chỉ định là `5`, tối đa `20`).
      - `competitorName`: Tên đối thủ/thương hiệu dạng viết liền hoặc có dấu viết chuẩn (ví dụ: `TPBank`).
-  4. **video_transcript**:
+  4. **video_transcript**: Chạy script này để lấy ra lời bài hát của video tiktok/youtube/facebook từ 1 list url
      - `urls`: Danh sách một hoặc nhiều URL video TikTok/Youtube/Facebook cụ thể cần lấy transcript.
-  5. **facebook_login**:
+  5. **facebook_login**: Chạy script này để kiểm tra hoặc tạo login facebook mới
      - Tham số kiểm tra login: `"--check"`
      - Tham số bắt buộc tạo/yêu cầu login mới: `"--force"`
 
