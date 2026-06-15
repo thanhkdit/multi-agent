@@ -201,19 +201,32 @@ async function runWeeklyJob() {
       const rawAds = await getCompanyAds(pageInfo.page_id, 100);
       console.log(`[Weekly Job] Retrieved ${rawAds.length} total active ads.`);
 
-      // 3. Filter by start_date_string and search string
+      // 3. Filter by active time (overlapping with the cutoff period)
       let filteredAds = rawAds.filter(ad => {
         if (!ad.start_date_string) return false;
+        
         const start = new Date(ad.start_date_string);
-        return start >= cutoffDate;
+        const now = new Date();
+        
+        // Ignore ads scheduled in the future
+        if (start > now) return false;
+        
+        // If ad has an end date, it must be on or after cutoffDate
+        if (ad.end_date_string) {
+          const end = new Date(ad.end_date_string);
+          return end >= cutoffDate;
+        }
+        
+        // No end date means it is currently active
+        return true;
       });
 
       if (searchArg) {
         const searchLower = searchArg.toLowerCase();
         filteredAds = filteredAds.filter(ad => ad.text && ad.text.toLowerCase().includes(searchLower));
-        console.log(`[Weekly Job] ${filteredAds.length} ads match the date filter and search string "${searchArg}".`);
+        console.log(`[Weekly Job] ${filteredAds.length} ads match the active time filter and search string "${searchArg}".`);
       } else {
-        console.log(`[Weekly Job] ${filteredAds.length} ads match the date filter (>= ${daysLimit} days ago).`);
+        console.log(`[Weekly Job] ${filteredAds.length} ads match the active time filter (active within the last ${daysLimit} days).`);
       }
 
       // 4. Push to sheet
