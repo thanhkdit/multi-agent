@@ -1,0 +1,13 @@
+{
+  "name": "agent-analytic",
+  "version": "1.0.0",
+  "description": "ClickHouse SQL Analytic Agent",
+  "main": "index.js",
+  "scripts": {
+    "query": "node scripts/clickhouse/query.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  },
+  "type": "commonjs"
+}

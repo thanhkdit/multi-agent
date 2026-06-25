@@ -185,7 +185,26 @@ async function main() {
     // Try to parse stdout as JSON, save raw if not
     let outputData;
     try {
-      outputData = JSON.parse(result.stdout);
+      const cleanStdout = result.stdout
+        .split('\n')
+        .filter(line => !line.trim().startsWith('◇'))
+        .join('\n')
+        .trim();
+
+      const firstCurly = cleanStdout.indexOf('{');
+      const firstBracket = cleanStdout.indexOf('[');
+      let startIndex = -1;
+      if (firstCurly !== -1 && firstBracket !== -1) {
+        startIndex = Math.min(firstCurly, firstBracket);
+      } else {
+        startIndex = firstCurly !== -1 ? firstCurly : firstBracket;
+      }
+
+      if (startIndex !== -1) {
+        outputData = JSON.parse(cleanStdout.slice(startIndex));
+      } else {
+        outputData = JSON.parse(cleanStdout);
+      }
     } catch {
       outputData = { raw_output: result.stdout, stderr: result.stderr };
     }

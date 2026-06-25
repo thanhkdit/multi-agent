@@ -22,6 +22,7 @@ Phân tích yêu cầu của user và xác định các tác vụ cần thực h
 - **Single Intent Facebook - Feed Focus:** lấy list bài viết, content, tương tác, post.
 - **Single Intent Tiktok:** Lấy list video, bài viết, content, tương tác của tiktok.
 - **Single Intent Tiktok Content - Transcript Focus:** Tách lời, bóc băng, dịch video (yêu cầu link cụ thể).
+- **ClickHouse Query Focus:** Yêu cầu truy vấn cơ sở dữ liệu ClickHouse để lấy dữ liệu báo cáo, chỉ số, anomaly detection, hoặc dữ liệu lưu trữ.
 - **Holistic Intent - Strategy Focus:** Hỏi về "chiến lược marketing", "tổng quan", "phân tích toàn diện", "đánh giá đối thủ" ➔ Phân tích đa kênh (Feed, Ads, Tiktok).
 
 ## STEP 2 — PROACTIVE RESEARCH & RESOLUTION
@@ -45,6 +46,7 @@ Trích xuất và chuẩn bị các tham số. Trở thành một agent "mở":
   5. **facebook_login**: Chạy script này để kiểm tra hoặc tạo login facebook mới
      - Tham số kiểm tra login: `"--check"`
      - Tham số bắt buộc tạo/yêu cầu login mới: `"--force"`
+  6. **clickhouse_query**: Truy vấn cơ sở dữ liệu ClickHouse. Bạn không tự tạo hay chạy script này qua CLI mà sẽ ủy thác toàn bộ yêu cầu (yêu cầu dữ liệu, thống kê, anomaly...) sang cho sub-agent `agent-analytic` qua `sessions_spawn`.
 
 - **BẮT BUỘC XÁC NHẬN VỚI USER TRƯỚC KHI DELEGATE (CONFIRMATION STEP):**
   - Sau khi dùng `web_search` để tìm ra các tham số cần thiết ứng với từng script cần chạy, bạn KHÔNG ĐƯỢC tự ý ủy quyền tác vụ.
@@ -54,9 +56,11 @@ Trích xuất và chuẩn bị các tham số. Trở thành một agent "mở":
 
 ## STEP 3 — DELEGATE VIA AGENT-SCRAPER & JOB QUEUE
 
-Khi bạn cần kiểm tra login, tạo login mới, hoặc quét dữ liệu, bạn BẮT BUỘC phải nhờ `agent-scraper` tạo job giúp bạn, sau đó tự bạn chờ kết quả.
+Khi bạn cần kiểm tra login, tạo login mới, quét dữ liệu hoặc truy vấn database, bạn BẮT BUỘC phải ủy thác (delegate) công việc cho các sub-agents tương ứng qua `sessions_spawn`:
+- Các tác vụ scraping, login được giao cho `agent-scraper` (chạy không đồng bộ qua Job Queue).
+- Các tác vụ truy vấn ClickHouse được giao cho `agent-analytic` (chạy đồng bộ, nhận kết quả trực tiếp).
 
-**Bước 3.1: Giao việc cho Agent-Scraper bằng `sessions_spawn`**
+**Bước 3.1.1: Giao việc cho Agent-Scraper bằng `sessions_spawn`**
 Bạn truyền danh sách công việc cần làm cho sub-agent `agent-scraper` qua tool `sessions_spawn` dưới định dạng **một mảng JSON**.
 Mỗi object trong mảng đại diện cho một job, tuân theo cấu trúc: `{"task_type": "...", "params": [...]}`.
 
@@ -78,6 +82,13 @@ Mỗi object trong mảng đại diện cho một job, tuân theo cấu trúc: `
 
 `agent-scraper` sẽ tạo các job trên Job Queue và trả về cho bạn **ngay lập tức** danh sách các `job_ids` dạng JSON.
 Ví dụ: `{"job_ids": ["abc111", "def222"]}`
+
+**Bước 3.1.2: Giao việc cho Agent-Analytic bằng `sessions_spawn`**
+**KHI NÀO CẦN GỌI:** Bất cứ khi nào user hỏi về số liệu phân phối, doanh thu, CVR, bất thường (anomaly) hoặc dữ liệu báo cáo lịch sử mà hệ thống đã lưu trữ.
+**CÁCH GIAO TIẾP:** Bạn KHÔNG TỰ VIẾT SQL. Bạn chỉ việc gọi sub-agent `agent-analytic` qua tool `sessions_spawn` bằng cách gửi nguyên vẹn thông tin yêu cầu, mục tiêu kinh doanh, và các bối cảnh dữ liệu cần lấy (ví dụ: Tên đối thủ, khoảng thời gian, loại dữ liệu).
+*Ví dụ yêu cầu gửi qua tool sessions_spawn:* 
+`"Hãy kiểm tra bảng anomaly_candidates hoặc v_ads_hourly_report để lấy danh sách các quảng cáo bị bão tiêu tiền (Spend Spike) của thương hiệu TPBank trong 7 ngày qua. Lưu ý lọc severity = critical."`
+`agent-analytic` sẽ tự đọc tài liệu database structure, tự suy luận ra câu lệnh SQL ClickHouse tối ưu, chạy script trên database và trả về kết quả định dạng JSON trực tiếp cho bạn. Bạn KHÔNG cần chạy `await-jobs` đối với tác vụ này. Khi có dữ liệu JSON, bạn tiến hành phân tích ở STEP 4 và 5.
 
 **Bước 3.2: Chờ kết quả bằng `await-jobs`**
 Sử dụng công cụ command_run (CLI) gọi trực tiếp lệnh `await-jobs` để theo dõi và chờ các job hoàn tất:
