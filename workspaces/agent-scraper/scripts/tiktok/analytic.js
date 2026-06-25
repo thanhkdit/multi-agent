@@ -16,11 +16,11 @@ const fs = require('fs');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const RAPIDAPI_HOST = "tiktok-api23.p.rapidapi.com";
-const keysStr = process.env.TIKTOK_RAPIDAPI_KEYS || "";
+const keysStr = process.env.RAPIDAPI_KEYS || "";
 const RAPIDAPI_KEY = keysStr.split(',').map(k => k.trim()).filter(k => k.length > 0);
 
 if (RAPIDAPI_KEY.length === 0) {
-  console.error("[FATAL] Missing TIKTOK_RAPIDAPI_KEYS in .env");
+  console.error("[FATAL] Missing RAPIDAPI_KEYS in .env");
   process.exit(1);
 }
 const BASE_URL = `https://${RAPIDAPI_HOST}/api`;
@@ -51,7 +51,7 @@ async function fetchWithRetry(url) {
 
       return data;
     } catch (err) {
-      console.warn(`[WARN] API key index ${i} failed: ${err.message}. Trying next...`);
+      // console.warn(`[WARN] API key index ${i} failed: ${err.message}. Trying next...`);
       lastError = err;
     }
   }
@@ -59,7 +59,6 @@ async function fetchWithRetry(url) {
   throw new Error(`All API keys failed. Last error: ${lastError?.message}`);
 }
 
-const LATEST_POSTS_COUNT = 3;
 
 /**
  * Gọi API lấy thông tin user
@@ -67,7 +66,7 @@ const LATEST_POSTS_COUNT = 3;
  */
 async function getUserInfo(uniqueId) {
   const url = `${BASE_URL}/user/info?uniqueId=${encodeURIComponent(uniqueId)}`;
-  console.log(`[INFO] Fetching user info for: ${uniqueId}`);
+  // console.log(`[INFO] Fetching user info for: ${uniqueId}`);
 
   const data = await fetchWithRetry(url);
 
@@ -84,29 +83,12 @@ async function getUserInfo(uniqueId) {
  */
 async function getUserListVideo(secUid, count = 35) {
   const url = `${BASE_URL}/user/posts?secUid=${encodeURIComponent(secUid)}&count=${count}&cursor=0`;
-  console.log(`[INFO] Fetching user video list (count=${count})`);
+  // console.log(`[INFO] Fetching user video list (count=${count})`);
 
   const data = await fetchWithRetry(url);
 
   if (data?.data?.statusCode !== 0 && data?.data?.status_code !== 0) {
     throw new Error(`getUserListVideo API error: ${data?.data?.status_msg || "Unknown error"}`);
-  }
-
-  return data;
-}
-
-/**
- * Gọi API lấy chi tiết video
- * GET /api/post/detail?videoId=<videoId>
- */
-async function getVideoDetail(videoId) {
-  const url = `${BASE_URL}/post/detail?videoId=${encodeURIComponent(videoId)}`;
-  console.log(`[INFO] Fetching video detail for: ${videoId}`);
-
-  const data = await fetchWithRetry(url);
-
-  if (data.statusCode !== 0) {
-    throw new Error(`getVideoDetail API error for ${videoId}: ${data.statusMsg || "Unknown error"}`);
   }
 
   return data;
@@ -141,19 +123,9 @@ function extractChannelInfo(apiResponse) {
 }
 
 /**
- * Lấy author.createTime từ video detail response
- * (API getUserInfo không trả createTime, nhưng getVideoDetail có)
+ * Trích xuất thông্তি video từ item trong danh sách user/posts
  */
-function getAuthorCreateTimeFromVideoDetail(apiResponse) {
-  const author = apiResponse?.itemInfo?.itemStruct?.author || {};
-  return author.createTime || null;
-}
-
-/**
- * Trích xuất thông tin video từ response getVideoDetail
- */
-function extractVideoDetail(apiResponse, uniqueId) {
-  const item = apiResponse?.itemInfo?.itemStruct || {};
+function extractVideoDetail(item, uniqueId) {
   const video = item.video || {};
   const stats = item.stats || {};
 
@@ -181,11 +153,11 @@ function extractVideoDetail(apiResponse, uniqueId) {
 /**
  * Hàm chính: phân tích kênh TikTok
  */
-async function analyzeTikTokChannel(uniqueId) {
+async function analyzeTikTokChannel(uniqueId, limit = 3) {
   // 1. Lấy thông tin user
   const userInfoResponse = await getUserInfo(uniqueId);
   const channelInfo = extractChannelInfo(userInfoResponse);
-  console.log(`[OK] Channel info fetched: ${channelInfo.title}`);
+  // console.log(`[OK] Channel info fetched: ${channelInfo.title}`);
 
   // 2. Lấy secUid để gọi API list video
   const secUid = userInfoResponse?.userInfo?.user?.secUid;
@@ -194,51 +166,24 @@ async function analyzeTikTokChannel(uniqueId) {
   }
 
   // 3. Lấy danh sách video
-  const listVideoResponse = await getUserListVideo(secUid, LATEST_POSTS_COUNT);
+  const listVideoResponse = await getUserListVideo(secUid, Math.max(limit, 20));
   const itemList = listVideoResponse?.data?.itemList || [];
 
   if (itemList.length === 0) {
-    console.log("[WARN] No videos found for this user");
+    // console.log("[WARN] No videos found for this user");
   }
 
-  // 4. Lấy 3 video mới nhất (sort theo createTime giảm dần)
+  // 4. Lấy video mới nhất (sort theo createTime giảm dần)
   const latestItems = itemList
     .sort((a, b) => (b.createTime || 0) - (a.createTime || 0))
-    .slice(0, LATEST_POSTS_COUNT);
+    .slice(0, limit);
 
-  console.log(`[INFO] Found ${latestItems.length} latest video(s), fetching details...`);
+  // console.log(`[INFO] Found ${latestItems.length} latest video(s), fetching details...`);
 
-  // 5. Gọi API get video detail cho từng video
-  const latestPosts = [];
-  let firstDetailResponse = null;
-  for (const item of latestItems) {
-    const videoId = item.id;
-    if (!videoId) {
-      console.log("[WARN] Skipping item without video ID");
-      continue;
-    }
+  // 5. Trích xuất video detail cho từng video từ dữ liệu đã lấy
+  const latestPosts = latestItems.map(item => extractVideoDetail(item, uniqueId));
 
-    try {
-      const detailResponse = await getVideoDetail(videoId);
-      if (!firstDetailResponse) firstDetailResponse = detailResponse;
-      const videoDetail = extractVideoDetail(detailResponse, uniqueId);
-      latestPosts.push(videoDetail);
-      console.log(`[OK] Video detail fetched: ${videoId}`);
-    } catch (err) {
-      console.error(`[ERROR] Failed to fetch detail for video ${videoId}: ${err.message}`);
-    }
-  }
-
-  // 6. Bổ sung channelCreatedAt từ video detail (nếu chưa có)
-  if (!channelInfo.channelCreatedAt && firstDetailResponse) {
-    const authorCreateTime = getAuthorCreateTimeFromVideoDetail(firstDetailResponse);
-    if (authorCreateTime) {
-      channelInfo.channelCreatedAt = new Date(authorCreateTime * 1000).toISOString();
-      console.log(`[OK] Channel created at: ${channelInfo.channelCreatedAt}`);
-    }
-  }
-
-  // 7. Tổng hợp kết quả
+  // 6. Tổng hợp kết quả
   const result = {
     channel: channelInfo,
     latestPosts: latestPosts,
@@ -264,27 +209,41 @@ function cleanFolderName(name) {
 
 // --- Main ---
 (async () => {
-  const uniqueId = process.argv[2];
-  const competitorName = process.argv[3];
+  let uniqueId = process.argv[2];
+  if (uniqueId && uniqueId.startsWith('@')) {
+    uniqueId = uniqueId.substring(1);
+  }
+  const limitArg = process.argv[3];
+  
+  let limit = parseInt(limitArg, 10);
+  let competitorName;
+
+  if (isNaN(limit)) {
+    limit = 3;
+    competitorName = process.argv[3];
+  } else {
+    limit = Math.min(Math.max(limit, 1), 15);
+    competitorName = process.argv[4];
+  }
 
   if (!uniqueId) {
-    console.error("Usage: node analytic.js <uniqueId> [competitorName]");
-    console.error("Example: node analytic.js taylorswift");
+    console.error("Usage: node analytic.js <uniqueId> [limit] [competitorName]");
+    console.error("Example: node analytic.js taylorswift 5");
     process.exit(1);
   }
 
   try {
-    const result = await analyzeTikTokChannel(uniqueId);
+    const result = await analyzeTikTokChannel(uniqueId, limit);
 
     // Output JSON
-    console.log("\n--- RESULT ---");
+    // console.log("\n--- RESULT ---");
     console.log(JSON.stringify(result, null, 2));
 
     if (result && result.channel) {
       const nameSource = competitorName || result.channel.nickname || result.channel.title || result.channel.uniqueId || 'default';
       const folderName = cleanFolderName(nameSource);
       if (folderName) {
-        const resultDir = path.join(__dirname, '../../result', folderName);
+        const resultDir = path.join(__dirname, '../../../shared/result', folderName);
         if (!fs.existsSync(resultDir)) {
           fs.mkdirSync(resultDir, { recursive: true });
         }

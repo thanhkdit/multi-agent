@@ -20,6 +20,7 @@ cookies.json
 *.webp
 *.mp4
 file_download/
+skills-lock.json
 
 # Job queue system (runtime data only — lib/ and schemas/ are tracked)
 workspaces/system/jobs/queue/
